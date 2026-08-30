@@ -77,6 +77,10 @@ class AmrDispatch:
     local_x: float | None = None
     local_y: float | None = None
     mode: str = "plan-only"
+    # Real VDA 5050 channel this action belongs on - see AmrCoordinator's
+    # own _INSTANT_ACTIONS comment for why this matters for interop, not
+    # just labeling.
+    channel: str = "order"
 
 
 @dataclass(frozen=True)
@@ -86,9 +90,21 @@ class AmrOrderPlan:
     schema_version: str
     mode: str
     actions: tuple[str, ...]
+    # Real VDA 5050 channel split - see AmrCoordinator's own
+    # _INSTANT_ACTIONS comment. A future transport adapter reads this to
+    # know which actions publish to the real "order" topic (queued, part
+    # of a route) vs "instantActions" (immediate, bypasses the queue) -
+    # VDA 5050 defines these as two genuinely separate MQTT topics, not
+    # two labels on the same channel.
+    instant_actions: tuple[str, ...]
 
     def to_dict(self) -> dict[str, object]:
-        return {"schema_version": self.schema_version, "mode": self.mode, "actions": list(self.actions)}
+        return {
+            "schema_version": self.schema_version,
+            "mode": self.mode,
+            "actions": list(self.actions),
+            "instant_actions": list(self.instant_actions),
+        }
 
 
 class AmrCoordinator:
@@ -102,6 +118,21 @@ class AmrCoordinator:
     CANCEL_ORDER = "CANCEL_ORDER"  # matches VDA 5050's own real "cancelOrder" action name
 
     _MOVEMENT_ACTIONS = {MOVE_TO_STAGING, MOVE_TO_DESTINATION, MOVE_TO_HOME}
+
+    # Real VDA 5050 (github.com/VDA5050/VDA5050 json_schemas/) publishes
+    # 8 real MQTT topics, 2 of which carry actions: "order" (a node/edge
+    # route with actions embedded in it - MOVE_TO_*/PICK_LOAD/DROP_LOAD
+    # here) and "instantActions" - a SEPARATE topic for commands that
+    # bypass the order queue and execute immediately regardless of the
+    # AGV's current order state (the spec's own real, documented examples:
+    # cancelOrder, startPause, stopPause, stateRequest, factsheetRequest).
+    # CANCEL_ORDER was previously modeled identically to the queued
+    # actions above - real, but not real VDA 5050 wire compatibility: a
+    # fleet manager expecting cancelOrder on the instantActions topic
+    # would never see it if this bridge published it as an order action
+    # instead. This set is what future transport adapter work reads to
+    # route each action to its real, correct topic.
+    _INSTANT_ACTIONS = {CANCEL_ORDER}
 
     _phase_actions = {
         JobPhase.PREPARE: MOVE_TO_STAGING,
@@ -119,7 +150,10 @@ class AmrCoordinator:
     def order_plan(self) -> AmrOrderPlan:
         """Return the static order-action vocabulary without opening any real transport."""
 
-        return AmrOrderPlan("1.0", "plan-only", tuple(self._phase_actions.values()))
+        all_actions = tuple(self._phase_actions.values())
+        order_actions = tuple(a for a in all_actions if a not in self._INSTANT_ACTIONS)
+        instant_actions = tuple(a for a in all_actions if a in self._INSTANT_ACTIONS)
+        return AmrOrderPlan("1.1", "plan-only", order_actions, instant_actions)
 
     def dispatch(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform) -> AmrDispatch:
         action = self._phase_actions.get(job.phase)
@@ -137,4 +171,5 @@ class AmrCoordinator:
                 return AmrDispatch(False, action, f"x/y must be real numbers, got x={x_raw!r} y={y_raw!r}")
 
         decision = evaluate_job(job, cell_state)
-        return AmrDispatch(decision.allowed, action, decision.reason, local_x, local_y)
+        channel = "instantActions" if action in self._INSTANT_ACTIONS else "order"
+        return AmrDispatch(decision.allowed, action, decision.reason, local_x, local_y, channel=channel)

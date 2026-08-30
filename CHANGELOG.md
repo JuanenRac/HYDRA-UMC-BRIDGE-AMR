@@ -6,6 +6,27 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.3] - Real VDA 5050 order/instantActions channel split
+
+- **`coordinator.py`** - `CANCEL_ORDER` now reports on the real, separate
+  VDA 5050 `instantActions` channel instead of the `order` channel every
+  other action uses. Researched against the
+  [official VDA 5050 JSON schemas](https://github.com/VDA5050/VDA5050/tree/main/json_schemas):
+  the real spec publishes 8 topics, 2 of which carry actions - `order`
+  (a node/edge route with actions embedded, queued) and `instantActions`
+  (immediate, bypasses the order queue - the spec's own real, documented
+  examples are `cancelOrder`, `startPause`, `stopPause`, `stateRequest`,
+  `factsheetRequest`). Modeling `cancelOrder` as a queued order action
+  was real but not real wire-compatible: a fleet manager expecting it on
+  `instantActions` would never see it published to `order` instead.
+- `AmrDispatch` gained a `channel` field (`"order"` | `"instantActions"`),
+  `AmrOrderPlan` gained a separate `instant_actions` tuple/dict key
+  alongside the existing `actions` one - schema bumped `1.0` -> `1.1`
+  since the plan's own output shape changed.
+- 3 new regression tests (channel split on `order_plan()`, `channel` on
+  a movement dispatch, `channel` on a `CANCEL_ORDER` dispatch) -
+  17/17 tests passing.
+
 ## [0.0.2] - Finite coordinate-frame gate
 
 - **`coordinator.py`** - AMR frame origins, heading and movement targets now

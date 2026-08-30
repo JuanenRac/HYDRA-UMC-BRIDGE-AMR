@@ -100,6 +100,17 @@ class CoordinatorTests(unittest.TestCase):
         self.assertTrue(result.accepted)
         self.assertEqual(result.action, "CANCEL_ORDER")
 
+    def test_cancel_order_is_dispatched_on_the_real_instant_actions_channel(self):
+        # Real VDA 5050 wire compatibility: cancelOrder is a documented
+        # instantActions-topic command, not an order-topic one - a future
+        # transport adapter needs this to route it correctly.
+        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT, {}), CellState.FAULT, self.identity)
+        self.assertEqual(result.channel, "instantActions")
+
+    def test_movement_and_load_actions_are_dispatched_on_the_real_order_channel(self):
+        result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity)
+        self.assertEqual(result.channel, "order")
+
     def test_unknown_sdk_phase_fails_closed_instead_of_guessing_an_action(self):
         unknown = BridgeJob("job-2", "idempotency-2", "amr-1", "SOME_FUTURE_PHASE", MachineState.IDLE, {})
         result = self.coordinator.dispatch(unknown, CellState.READY, self.identity)
@@ -108,9 +119,19 @@ class CoordinatorTests(unittest.TestCase):
 
     def test_order_plan_is_static_and_explicitly_not_a_runtime(self):
         plan = self.coordinator.order_plan().to_dict()
-        self.assertEqual(plan["schema_version"], "1.0")
+        self.assertEqual(plan["schema_version"], "1.1")
         self.assertEqual(plan["mode"], "plan-only")
-        self.assertIn("CANCEL_ORDER", plan["actions"])
+        self.assertIn("MOVE_TO_DESTINATION", plan["actions"])
+
+    def test_order_plan_separates_the_real_vda5050_order_and_instant_action_channels(self):
+        # cancelOrder is a real, documented VDA 5050 instantActions-topic
+        # command (github.com/VDA5050/VDA5050 json_schemas/) - it must
+        # never appear in the queued "actions" list, only in the separate
+        # "instant_actions" one.
+        plan = self.coordinator.order_plan().to_dict()
+        self.assertNotIn("CANCEL_ORDER", plan["actions"])
+        self.assertIn("CANCEL_ORDER", plan["instant_actions"])
+        self.assertNotIn("MOVE_TO_DESTINATION", plan["instant_actions"])
 
 
 if __name__ == "__main__":
