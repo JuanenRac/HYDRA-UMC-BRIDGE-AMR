@@ -38,9 +38,19 @@ class FrameTransform:
     origin_y: float
     heading_rad: float
 
+    def __post_init__(self) -> None:
+        if not all(math.isfinite(value) for value in (self.origin_x, self.origin_y, self.heading_rad)):
+            raise ValueError("FrameTransform origin and heading must be finite")
+
+    @staticmethod
+    def _require_finite_point(x: float, y: float) -> None:
+        if not math.isfinite(x) or not math.isfinite(y):
+            raise ValueError("coordinate x/y must be finite")
+
     def to_local(self, x: float, y: float) -> tuple[float, float]:
         """Factory-frame (x, y) -> this AMR's own local-frame (x, y)."""
 
+        self._require_finite_point(x, y)
         dx, dy = x - self.origin_x, y - self.origin_y
         cos_h, sin_h = math.cos(self.heading_rad), math.sin(self.heading_rad)
         return dx * cos_h + dy * sin_h, -dx * sin_h + dy * cos_h
@@ -48,6 +58,7 @@ class FrameTransform:
     def to_factory(self, x: float, y: float) -> tuple[float, float]:
         """This AMR's own local-frame (x, y) -> factory-frame (x, y) - the real inverse of `to_local`."""
 
+        self._require_finite_point(x, y)
         cos_h, sin_h = math.cos(self.heading_rad), math.sin(self.heading_rad)
         dx = x * cos_h - y * sin_h
         dy = x * sin_h + y * cos_h

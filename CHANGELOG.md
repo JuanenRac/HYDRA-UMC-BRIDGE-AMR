@@ -6,6 +6,14 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.2] - Finite coordinate-frame gate
+
+- **`coordinator.py`** - AMR frame origins, heading and movement targets now
+  require finite values. `NaN`/infinite coordinates are rejected before an
+  order plan can carry a non-physical local target to a future transport.
+- Added frame and dispatch regression tests for the fail-closed path.
+- 14/14 tests passing.
+
 ## [0.0.1]
 
 - Added a dependency-free AMR/AGV coordination core (`AmrCoordinator`)

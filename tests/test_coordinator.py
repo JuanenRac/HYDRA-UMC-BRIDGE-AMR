@@ -51,6 +51,12 @@ class FrameTransformTests(unittest.TestCase):
         self.assertAlmostEqual(round_tripped[0], original[0])
         self.assertAlmostEqual(round_tripped[1], original[1])
 
+    def test_non_finite_transform_or_coordinate_is_rejected(self):
+        with self.assertRaises(ValueError):
+            FrameTransform(float("nan"), 0.0, 0.0)
+        with self.assertRaises(ValueError):
+            FrameTransform(0.0, 0.0, 0.0).to_local(float("inf"), 0.0)
+
 
 class CoordinatorTests(unittest.TestCase):
     def setUp(self):
@@ -71,6 +77,11 @@ class CoordinatorTests(unittest.TestCase):
 
     def test_move_action_with_non_numeric_coordinates_is_rejected(self):
         result = self.coordinator.dispatch(job(parameters={"x": "not-a-number", "y": "0"}), CellState.READY, self.identity)
+        self.assertFalse(result.accepted)
+        self.assertIsNone(result.local_x)
+
+    def test_move_action_with_non_finite_coordinates_is_rejected(self):
+        result = self.coordinator.dispatch(job(parameters={"x": "nan", "y": "0"}), CellState.READY, self.identity)
         self.assertFalse(result.accepted)
         self.assertIsNone(result.local_x)
 
