@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "ecosystem": "HYDRA-UMC",
+  "name": "HYDRA-UMC-BRIDGE-AMR",
+  "version": "0.0.1",
+  "role": "library",
+  "stack": "python",
+  "technologies": [
+    "Python",
+    "VDA 5050 (subset)",
+    "HYDRA-UMC-SDK"
+  ],
+  "deployment_target": "cm5",
+  "maturity": "functional",
+  "family": "Mobile & Autonomous Bridges",
+  "parent": "HYDRA-UMC-SERVER",
+  "build": "python tools/build_test.py",
+  "notes": "Real, dependency-free coordination boundary for AGV/AMR fleets: a real, hand-checkable 2D rigid-body transform (FrameTransform) from the factory's shared coordinate frame into a specific AMR's local frame, plus a minimal VDA-5050-inspired order-action vocabulary (MOVE_TO_*/PICK_LOAD/DROP_LOAD/CANCEL_ORDER) gated through HYDRA-UMC-SDK's shared safety contract. Never plans a path or avoids an obstacle itself - that authority stays with the AMR's own onboard navigation or its fleet manager. No real fleet-manager REST/WebSocket adapter or physical AMR validated yet.",
+  "native_version": {
+    "file": "pyproject.toml",
+    "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""
+  }
+}
