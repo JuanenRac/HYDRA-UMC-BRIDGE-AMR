@@ -10,7 +10,7 @@ GPL-3.0-or-later - see LICENSE
 
 # 🚗 HYDRA-UMC-BRIDGE-AMR
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | 🇪🇸 <b>Español</b></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | 🇪🇸 <b>Español</b> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
 
 ### 🔗 Frontera de coordinación sin dependencias entre HYDRA-UMC y flotas AGV/AMR
 
@@ -86,7 +86,7 @@ HYDRA-UMC-BRIDGE-AMR/
 ├── CHANGELOG.md
 ├── CODE_OF_CONDUCT.md / CONTRIBUTING.md / SECURITY.md / SUPPORT.md
 ├── LICENSE / LICENSE.md
-└── README.md / README_spa.md    # Este archivo y su traducción
+└── README.md / README_*.md      # Este archivo y sus 6 traducciones
 ```
 
 ---
