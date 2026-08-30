@@ -2,12 +2,13 @@
   "schema_version": "1.0",
   "ecosystem": "HYDRA-UMC",
   "name": "HYDRA-UMC-BRIDGE-AMR",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "role": "library",
   "stack": "python",
   "technologies": [
     "Python",
     "VDA 5050 (subset)",
+    "MQTT",
     "HYDRA-UMC-SDK"
   ],
   "deployment_target": "cm5",
@@ -15,7 +16,7 @@
   "family": "Mobile & Autonomous Bridges",
   "parent": "HYDRA-UMC-SERVER",
   "build": "python tools/build_test.py",
-  "notes": "Real, dependency-free coordination boundary for AGV/AMR fleets: a real, hand-checkable 2D rigid-body transform (FrameTransform) from the factory's shared coordinate frame into a specific AMR's local frame, plus a minimal VDA-5050-inspired order-action vocabulary (MOVE_TO_*/PICK_LOAD/DROP_LOAD/CANCEL_ORDER) gated through HYDRA-UMC-SDK's shared safety contract. Never plans a path or avoids an obstacle itself - that authority stays with the AMR's own onboard navigation or its fleet manager. No real fleet-manager REST/WebSocket adapter or physical AMR validated yet.",
+  "notes": "Real, dependency-free coordination boundary for AGV/AMR fleets: a real, hand-checkable 2D rigid-body transform (FrameTransform) from the factory's shared coordinate frame into a specific AMR's local frame, a minimal VDA-5050-inspired order-action vocabulary (MOVE_TO_*/PICK_LOAD/DROP_LOAD/CANCEL_ORDER) gated through HYDRA-UMC-SDK's shared safety contract, and a real VDA 5050 MQTT publisher (Vda5050Publisher) that only ever publishes an already-gated dispatch to the correct real order/instantActions topic. Never plans a path or avoids an obstacle itself - that authority stays with the AMR's own onboard navigation or its fleet manager. Not yet exercised against a real fleet manager or physical AMR.",
   "native_version": {
     "file": "pyproject.toml",
     "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""

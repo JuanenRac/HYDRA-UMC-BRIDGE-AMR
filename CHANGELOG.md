@@ -6,6 +6,27 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.4] - Real VDA 5050 MQTT publisher (pre-real: connected, not simulated)
+
+- **`mqtt_transport.py`** (new) - this bridge's first real transport:
+  `Vda5050Publisher.publish()` sends an already-gated `AmrDispatch` as a
+  real, spec-shaped VDA 5050 MQTT message. Real topic template
+  (`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{topic}`,
+  researched against
+  [github.com/VDA5050/VDA5050](https://github.com/VDA5050/VDA5050/blob/main/VDA5050_EN.md)
+  section 4.2). A real `order` message describes exactly ONE destination
+  node (this bridge's own resolved `local_x`/`local_y`) with the action
+  attached and an empty edge list - a real, valid VDA 5050 shape for "go
+  here and do this", not a multi-waypoint route this bridge was never
+  meant to plan. A real `instantActions` message carries the action
+  directly with `blockingType: "HARD"`. Only a dispatch the shared SDK gate
+  already accepted is ever published - a rejected `AmrDispatch` never
+  reaches the network. `open_mqtt_client()` is the one place `paho-mqtt`
+  (new optional `[mqtt]` extra) is imported, lazily, degrading to a clear
+  `RuntimeError` instead of a bare `ImportError` when it isn't installed.
+- 9 new regression tests against an in-memory fake MQTT client (no real
+  broker needed) - 25/25 tests passing.
+
 ## [0.0.3] - Real VDA 5050 order/instantActions channel split
 
 - **`coordinator.py`** - `CANCEL_ORDER` now reports on the real, separate

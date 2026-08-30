@@ -10,13 +10,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydra-umc-bridge-amr"
-version = "0.0.3"
+version = "0.0.4"
 description = "Fail-safe HYDRA-UMC to AGV/AMR fleet coordination boundary"
 requires-python = ">=3.11"
 license = {text = "GPL-3.0-or-later"}
 dependencies = [
   "hydra-umc-sdk @ git+https://github.com/JuanenRac/HYDRA-UMC-SDK.git@main#subdirectory=clients/python"
 ]
+
+[project.optional-dependencies]
+# Only open_mqtt_client() needs this - it's imported lazily (see
+# mqtt_transport.py's own comment) so the rest of the package, including
+# every safety-relevant payload-building/gating test, works without it
+# installed.
+mqtt = ["paho-mqtt>=2.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
