@@ -112,7 +112,7 @@ bash build.sh
 
 ## ✅ Aktueller Status & Nächste Schritte
 
-**Heute real:** Version `0.0.1`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.0.4`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema mit der echten VDA-5050-Kanaltrennung order/instantActions, einem echten VDA-5050-MQTT-Publisher (`Vda5050Publisher`) sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Navigations- oder Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 

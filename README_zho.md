@@ -112,7 +112,7 @@ bash build.sh
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.0.1`,作为一个无依赖协调核心(`AmrCoordinator`)是功能齐备的,配有真实的、经过手工验证的坐标系变换(`FrameTransform`)、安全拒绝的阶段路由、静态 `plan-only` 订单模式,以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.0.4`,作为一个无依赖协调核心(`AmrCoordinator`)是功能齐备的,配有真实的、经过手工验证的坐标系变换(`FrameTransform`)、安全拒绝的阶段路由、带有 VDA 5050 真实 order/instantActions 通道拆分的静态 `plan-only` 订单模式、一个真实的 VDA 5050 MQTT 发布者(`Vda5050Publisher`),以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是导航或电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 
