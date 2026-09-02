@@ -34,8 +34,9 @@ Appartiene alla famiglia **Mobile & Autonomous Bridges** insieme a `HYDRA-UMC-BR
 * ✅ **Validazione reale delle coordinate per azione:** un'azione di movimento a cui mancano `x`/`y`, o che ne porta uno non numerico, viene rifiutata localmente prima che la trasformazione venga mai eseguita. *(implementato, testato)*
 * ✅ **Porta di sicurezza condivisa, reale:** ogni lavoro inviato tramite `AmrCoordinator.dispatch()` viene valutato da `evaluate_job()` del `bridge_contract` di `HYDRA-UMC-SDK`, la stessa porta usata da tutti i ponti fratelli e da HYDRA-UMC-SERVER; una fase produttiva richiede una macchina esterna `IDLE` e una cella HYDRA-UMC `READY`, mentre `CANCEL_ORDER` resta richiedibile durante un guasto. *(implementato)*
 * ✅ **Instradamento delle fasi chiuso ed evidenza statica:** una futura fase SDK sconosciuta viene negata. `inspect_order_plan.py` emette il piano d'ordine statico di schema `1.0` senza aprire alcun trasporto. *(implementato, testato)*
+* ✅ **Publisher MQTT VDA 5050 reale:** `Vda5050Publisher` di `mqtt_transport.py` invia un dispatch già validato come messaggio reale, conforme allo schema, sul topic reale corretto (`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`) - un dispatch rifiutato non raggiunge mai la rete. *(implementato, testato in `tests/test_mqtt_transport.py`)*
 * ✅ **Build/test non mutante:** `build-test.bat`/`.sh` compilano il codice sorgente ed eseguono test unitari deterministici senza cambiare versione o CHANGELOG. *(implementato, vedi COMPILAZIONE ED ESECUZIONE più sotto)*
-* 🔜 **Adattatore di trasporto reale del gestore di flotta** (un client VDA 5050 reale, o un'integrazione REST/WebSocket specifica del produttore) - introdotto solo dopo che una piattaforma di flotta reale sarà selezionata e testata. *(pianificato)*
+* 🔜 **Adattatore REST/WebSocket specifico di un gestore di flotta** (per una piattaforma di flotta non nativa VDA 5050) - introdotto solo dopo che quella piattaforma sarà selezionata e testata. *(pianificato)*
 
 ---
 
@@ -127,6 +128,7 @@ Questo progetto fa parte di un ecosistema robotico più ampio dello stesso autor
 
 - **[HYDRA-UMC-SDK](https://github.com/JuanenRac/HYDRA-UMC-SDK)** — il contratto condiviso di lavoro e sicurezza attraverso cui ogni ponte (incluso questo) valuta i propri lavori.
 - **[HYDRA-UMC-SERVER](https://github.com/JuanenRac/HYDRA-UMC-SERVER)** — il confine autenticato dell'ecosistema a cui questo ponte riporta.
+- **[HYDRA-UMC-MQTT-BROKER](https://github.com/JuanenRac/HYDRA-UMC-MQTT-BROKER)** — `Vda5050Publisher` di `mqtt_transport.py` invia qui ogni dispatch già validato come un vero messaggio VDA 5050 `order`/`instantActions` conforme allo schema - a differenza dello schema di topic `hydra/bridges/<nome>/...` dei 5 ponti stazionari, questo usa direttamente lo schema di topic reale proprio di VDA 5050.
 - **[HYDRA-UMC-BRIDGE-DROIDS](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-DROIDS)** — ponte mobile fratello per droidi con gambe/umanoidi.
 - **[HYDRA-UMC-BRIDGE-UAV](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-UAV)** — ponte mobile fratello per droni.
 

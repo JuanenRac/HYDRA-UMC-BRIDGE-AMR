@@ -34,8 +34,9 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **実在するアクションごとの座標検証:** `x`/`y` が欠けている、あるいは数値でない値を持つ移動アクションは、変換が実行される前にローカルで拒否される。*(実装済み、テスト済み)*
 * ✅ **実在する共有安全ゲート:** `AmrCoordinator.dispatch()` を通じて送信されるすべてのジョブは、`HYDRA-UMC-SDK` の `bridge_contract` にある `evaluate_job()` によって評価される。これは他のすべての兄弟ブリッジとHYDRA-UMC-SERVERが使うのと同じゲートである。生産フェーズには外部機械が `IDLE` であり、HYDRA-UMCセルが `READY` であることが必要だが、`CANCEL_ORDER` は故障中でも要求可能なままである。*(実装済み)*
 * ✅ **フェイルクローズのフェーズルーティングと静的エビデンス:** 未知の将来SDKフェーズは拒否される。`inspect_order_plan.py` はトランスポートを一切開かずに静的スキーマ `1.0` のオーダープランを出力する。*(実装・テスト済み)*
+* ✅ **実際の VDA 5050 MQTT パブリッシャー:** `mqtt_transport.py` の `Vda5050Publisher` は、すでにゲートを通過したディスパッチを、正しい実際のトピック（`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`）上で、実際の仕様準拠メッセージとして送信する —— 拒否されたディスパッチがネットワークに届くことは決してない。*(実装済み、`tests/test_mqtt_transport.py` でテスト済み)*
 * ✅ **非破壊的なビルド/テスト:** `build-test.bat`/`.sh` はソースをコンパイルし、バージョンやCHANGELOGを変更せずに決定論的なユニットテストを実行する。*(実装済み、下記「ビルドと実行」を参照)*
-* 🔜 **実際のフリートマネージャー・トランスポートアダプター**(実在するVDA 5050クライアント、またはベンダー固有のREST/WebSocket連携) —— 実際のフリートプラットフォームが選定・テストされた後にのみ導入される。*(計画中)*
+* 🔜 **ベンダー固有のフリートマネージャー REST/WebSocket アダプター**（VDA 5050 ネイティブではないフリートプラットフォーム向け） —— そのプラットフォームが選定・テストされた後にのみ導入される。*(計画中)*
 
 ---
 
@@ -127,6 +128,7 @@ bash build.sh
 
 - **[HYDRA-UMC-SDK](https://github.com/JuanenRac/HYDRA-UMC-SDK)** —— このブリッジ(および他のすべてのブリッジ)がジョブを評価する共有のジョブ・安全契約。
 - **[HYDRA-UMC-SERVER](https://github.com/JuanenRac/HYDRA-UMC-SERVER)** —— このブリッジが報告する認証済みエコシステム境界。
+- **[HYDRA-UMC-MQTT-BROKER](https://github.com/JuanenRac/HYDRA-UMC-MQTT-BROKER)** —— `mqtt_transport.py` の `Vda5050Publisher` は、ゲートを通過した各ディスパッチを、実際の仕様準拠 VDA 5050 `order`/`instantActions` メッセージとしてここに送信する —— 5つの定置型ブリッジ自身の `hydra/bridges/<name>/...` トピック方式とは異なり、これは VDA 5050 自身の実際のトピック形式を直接使用する。
 - **[HYDRA-UMC-BRIDGE-DROIDS](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-DROIDS)** —— レッグ型・ヒューマノイド型ドロイド向けの兄弟モバイルブリッジ。
 - **[HYDRA-UMC-BRIDGE-UAV](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-UAV)** —— ドローン向けの兄弟モバイルブリッジ。
 

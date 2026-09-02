@@ -34,8 +34,9 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **真实的按动作坐标校验:** 缺少 `x`/`y`,或携带非数值坐标的移动动作,会在变换运行之前就在本地被拒绝。*(已实现,已测试)*
 * ✅ **真实的共享安全门控:** 每个通过 `AmrCoordinator.dispatch()` 派发的任务都会由 `HYDRA-UMC-SDK` 的 `bridge_contract` 中的 `evaluate_job()` 评估,这与所有兄弟桥接以及 HYDRA-UMC-SERVER 使用的是同一个门控;生产性阶段需要外部机器处于 `IDLE` 且 HYDRA-UMC 单元处于 `READY`,而 `CANCEL_ORDER` 在故障期间仍可请求。*(已实现)*
 * ✅ **安全拒绝的阶段路由与静态证据:** 未知的未来 SDK 阶段会被拒绝。`inspect_order_plan.py` 会输出静态模式 `1.0` 的订单计划,且不会打开任何传输通道。*(已实现,已测试)*
+* ✅ **真实的 VDA 5050 MQTT 发布者:** `mqtt_transport.py` 的 `Vda5050Publisher` 将一个已通过门控的调度作为真实的、符合规范的消息,发布到正确的真实主题上(`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`)——被拒绝的调度永远不会到达网络。*(已实现,在 `tests/test_mqtt_transport.py` 中测试)*
 * ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与运行")*
-* 🔜 **真实的车队管理器传输适配器**(一个真实的 VDA 5050 客户端,或某个厂商专属的 REST/WebSocket 集成)——只有在选定并测试了真实的车队平台之后才会引入。*(计划中)*
+* 🔜 **厂商专属的车队管理器 REST/WebSocket 适配器**(面向非 VDA 5050 原生的车队平台)——只有在选定并测试了该平台之后才会引入。*(计划中)*
 
 ---
 
@@ -127,6 +128,7 @@ bash build.sh
 
 - **[HYDRA-UMC-SDK](https://github.com/JuanenRac/HYDRA-UMC-SDK)** —— 共享的任务与安全契约,本桥接(以及所有其他桥接)都通过它评估任务。
 - **[HYDRA-UMC-SERVER](https://github.com/JuanenRac/HYDRA-UMC-SERVER)** —— 本桥接汇报的经过身份验证的生态系统边界。
+- **[HYDRA-UMC-MQTT-BROKER](https://github.com/JuanenRac/HYDRA-UMC-MQTT-BROKER)** —— `mqtt_transport.py` 的 `Vda5050Publisher` 会把每个已通过门控的调度,作为真实的、符合规范的 VDA 5050 `order`/`instantActions` 消息发送到这里——与其他 5 个固定式桥接自身的 `hydra/bridges/<name>/...` 主题方案不同,这里直接使用 VDA 5050 自身真实的主题格式。
 - **[HYDRA-UMC-BRIDGE-DROIDS](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-DROIDS)** —— 面向有腿式/人形机器人的兄弟移动桥接。
 - **[HYDRA-UMC-BRIDGE-UAV](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-UAV)** —— 面向无人机的兄弟移动桥接。
 
