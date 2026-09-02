@@ -71,15 +71,19 @@ HYDRA-UMC-BRIDGE-AMR/
 ├── src/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
-│       └── coordinator.py       # AmrCoordinator + FrameTransform: 依存関係なしのオーダーゲート
+│       ├── coordinator.py       # AmrCoordinator + FrameTransform: 依存関係なしのオーダーゲート
+│       └── mqtt_transport.py    # 実際のVDA 5050 MQTT publish - order/instantActions、検証済みdispatchのみ
 ├── tests/
-│   └── test_coordinator.py      # 決定論的ユニットテスト(手計算で検証可能な幾何学を含む)
+│   ├── test_coordinator.py      # 決定論的ユニットテスト(手計算で検証可能な幾何学を含む)
+│   └── test_mqtt_transport.py   # 偽のMQTTクライアントに対するVDA 5050トピック/メッセージ形状テスト
 ├── tools/
 │   ├── build_test.py            # 非破壊的なコンパイル+テストランナー (build-test.bat/.sh)
 │   ├── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期
 │   └── inspect_order_plan.py    # 静的なオーダープランを出力する(トランスポートを開かない)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 適用範囲、対応プラットフォーム、スクリプト、ハードウェア受け入れゲート
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README バナー
 ├── build-test.bat / build-test.sh  # 検証のみ、リポジトリを一切変更しない
 ├── build.bat / build.sh            # 検証後、成功時のみバージョン + CHANGELOG を更新
 ├── pyproject.toml               # パッケージメタデータ。HYDRA-UMC-SDK に依存 (git)

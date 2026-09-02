@@ -71,15 +71,19 @@ HYDRA-UMC-BRIDGE-AMR/
 ├── src/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
-│       └── coordinator.py       # AmrCoordinator + FrameTransform:无依赖的订单门控
+│       ├── coordinator.py       # AmrCoordinator + FrameTransform:无依赖的订单门控
+│       └── mqtt_transport.py    # 真实的 VDA 5050 MQTT 发布 - order/instantActions,仅限已验证的 dispatch
 ├── tests/
-│   └── test_coordinator.py      # 确定性单元测试,含可手工核验的几何计算
+│   ├── test_coordinator.py      # 确定性单元测试,含可手工核验的几何计算
+│   └── test_mqtt_transport.py   # 针对伪 MQTT 客户端的 VDA 5050 topic/消息格式测试
 ├── tools/
 │   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
 │   ├── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
 │   └── inspect_order_plan.py    # 打印静态订单计划(不打开传输通道)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 范围、兼容平台、脚本、硬件验收门控
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README 横幅图
 ├── build-test.bat / build-test.sh  # 仅验证,绝不修改仓库
 ├── build.bat / build.sh            # 先验证,成功后才更新版本 + CHANGELOG
 ├── pyproject.toml               # 包元数据;依赖 HYDRA-UMC-SDK (git)

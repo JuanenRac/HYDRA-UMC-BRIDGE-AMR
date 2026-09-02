@@ -71,15 +71,19 @@ HYDRA-UMC-BRIDGE-AMR/
 ├── src/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
-│       └── coordinator.py       # AmrCoordinator + FrameTransform: abhängigkeitsfreies Order-Gatter
+│       ├── coordinator.py       # AmrCoordinator + FrameTransform: abhängigkeitsfreies Order-Gatter
+│       └── mqtt_transport.py    # Echter VDA-5050-MQTT-Publish - order/instantActions, nur bereits validierter Dispatch
 ├── tests/
-│   └── test_coordinator.py      # Deterministische Unit-Tests, inkl. von Hand nachprüfbarer Geometrie
+│   ├── test_coordinator.py      # Deterministische Unit-Tests, inkl. von Hand nachprüfbarer Geometrie
+│   └── test_mqtt_transport.py   # Tests der VDA-5050-Topic-/Nachrichtenform gegen einen Fake-MQTT-Client
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
 │   ├── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
 │   └── inspect_order_plan.py    # Gibt den statischen Order-Plan aus (kein Transport geöffnet)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Umfang, kompatible Plattformen, Skripte, Hardware-Abnahmegatter
+├── images/
+│   └── HYDRA_UMC_BANNER.svg     # README-Banner
 ├── build-test.bat / build-test.sh  # Validiert nur, ändert das Repository nie
 ├── build.bat / build.sh            # Validiert und erhöht bei Erfolg Version + CHANGELOG
 ├── pyproject.toml               # Paket-Metadaten; hängt von HYDRA-UMC-SDK ab (git)
