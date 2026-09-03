@@ -94,6 +94,8 @@ HYDRA-UMC-BRIDGE-AMR/
 └── README.md / README_*.md      # 本ファイルおよびその6言語訳
 ```
 
+このブリッジを実際のフリートに向ける前に確認しておくべき、適用範囲と運用モデル、対応プラットフォーム、スクリプト一覧表、ハードウェア受け入れゲートの全体については [`docs/BRIDGE_GUIDE.md`](docs/BRIDGE_GUIDE.md) を参照してください。
+
 ---
 
 ## 4. ⚙️ ビルドと実行
@@ -209,6 +211,16 @@ bash build.sh
 - **[URTC-SMART-RACK](https://github.com/JuanenRac/URTC-SMART-RACK)** — 実際の工具 ID デコードと Smart Idle 予熱ロジックを備えた、基板搭載ラック用ファームウェア。
 - **[URTC-VISION-TOOL](https://github.com/JuanenRac/URTC-VISION-TOOL)** — サーマル/RGB 検査ツールヘッド向けの、ファームウェアと実際の Python ビジョンコンパニオン。
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — このエコシステム内のすべてのリポジトリを検出・クローン・更新する、管理用デスクトップツール。
+
+---
+
+## 📚 ドキュメント & コミュニティ
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** —— プルリクエストのための技術スタックとコーディング指針。
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** —— このコミュニティで期待される行動規範。
+- **[SECURITY.md](SECURITY.md)** —— 脆弱性の報告方法と、このプロジェクトの実際のセキュリティ重点領域。
+- **[SUPPORT.md](SUPPORT.md)** —— 質問の投稿先とバグの報告先。
+- **[LICENSE.md](LICENSE.md)** —— このプロジェクト自身のライセンス。
 
 ## 👤 作者
 **JuanenRac** (Electro Hobby 3D)

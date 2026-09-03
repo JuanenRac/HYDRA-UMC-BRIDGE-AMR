@@ -94,6 +94,8 @@ HYDRA-UMC-BRIDGE-AMR/
 └── README.md / README_*.md      # 本文件及其 6 种译文
 ```
 
+在将此 bridge 指向真实车队之前，请参阅 [`docs/BRIDGE_GUIDE.md`](docs/BRIDGE_GUIDE.md) 了解完整的适用范围与运行模式、兼容平台、脚本一览表，以及需要走一遍的硬件验收关卡。
+
 ---
 
 ## 4. ⚙️ 构建与运行
@@ -209,6 +211,16 @@ bash build.sh
 - **[URTC-SMART-RACK](https://github.com/JuanenRac/URTC-SMART-RACK)** — 面向板卡安装机架的固件，具备真实的工具 ID 解码与 Smart Idle 预热逻辑。
 - **[URTC-VISION-TOOL](https://github.com/JuanenRac/URTC-VISION-TOOL)** — 面向热成像/RGB 检测工具头的固件及真实 Python 视觉伴侣程序。
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — 发现、克隆并更新本生态系统中每个仓库的管理类桌面工具。
+
+---
+
+## 📚 文档与社区
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** —— 提交 Pull Request 所需的技术栈和编码规范。
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** —— 本社区所期望的行为准则。
+- **[SECURITY.md](SECURITY.md)** —— 如何报告漏洞，以及本项目真实的安全关注重点。
+- **[SUPPORT.md](SUPPORT.md)** —— 在哪里提问和报告缺陷。
+- **[LICENSE.md](LICENSE.md)** —— 本项目自身的许可证。
 
 ## 👤 作者
 **JuanenRac** (Electro Hobby 3D)

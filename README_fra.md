@@ -94,6 +94,11 @@ HYDRA-UMC-BRIDGE-AMR/
 └── README.md / README_*.md      # Ce fichier et ses 6 traductions
 ```
 
+Voir [`docs/BRIDGE_GUIDE.md`](docs/BRIDGE_GUIDE.md) pour la portée complète et
+le modèle opérationnel, les plateformes compatibles, le tableau des scripts,
+et le portail d'acceptation matérielle à parcourir avant de pointer ce
+bridge vers une flotte réelle.
+
 ---
 
 ## 4. ⚙️ COMPILATION ET EXÉCUTION
@@ -209,6 +214,16 @@ Ce projet fait partie de l'écosystème robotique HYDRA-UMC du même auteur (Jua
 - **[URTC-SMART-RACK](https://github.com/JuanenRac/URTC-SMART-RACK)** — firmware pour un rack de montage de cartes avec décodage réel d'ID d'outil et logique de préchauffage Smart Idle.
 - **[URTC-VISION-TOOL](https://github.com/JuanenRac/URTC-VISION-TOOL)** — firmware plus un vrai compagnon de vision Python pour une tête d'outil d'inspection thermique/RGB.
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — outil administratif de bureau qui découvre, clone et met à jour chaque dépôt de cet écosystème.
+
+---
+
+## 📚 Documentation & Communauté
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — pile technologique et lignes directrices de codage pour une pull request.
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — les normes de comportement attendues dans cette communauté.
+- **[SECURITY.md](SECURITY.md)** — comment signaler une vulnérabilité, et les véritables axes de sécurité de ce projet.
+- **[SUPPORT.md](SUPPORT.md)** — où poser des questions et signaler des bugs.
+- **[LICENSE.md](LICENSE.md)** — la licence propre de ce projet.
 
 ## 👤 AUTEUR
 **JuanenRac** (Electro Hobby 3D)
