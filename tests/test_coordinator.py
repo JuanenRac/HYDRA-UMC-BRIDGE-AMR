@@ -60,7 +60,7 @@ class FrameTransformTests(unittest.TestCase):
             FrameTransform(0.0, 0.0, 0.0, "site-a").to_local(float("inf"), 0.0)
 
     def test_missing_map_id_is_rejected_regression_for_amr_02(self):
-        # AMR-02 (found in an ecosystem-wide software-improvements audit):
+        # AMR-02:
         # a real VDA 5050 nodePosition requires mapId - map_id must be a
         # real, non-empty identity, never silently defaulted.
         with self.assertRaises(ValueError):
@@ -122,7 +122,7 @@ class CoordinatorTests(unittest.TestCase):
         result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity)
         self.assertEqual(result.channel, "order")
 
-    # V07-014 (found in an independent revalidation audit, P2, shared
+    # V07-014 (P2, shared
     # with BRIDGE-DROIDS/BRIDGE-OPENPNP/BRIDGE-ROS2): HYDRA-UMC-SDK's own
     # real fix (REV-008) now rejects an unrecognised `phase` AT
     # CONSTRUCTION TIME (`BridgeJob.__post_init__` requires a real

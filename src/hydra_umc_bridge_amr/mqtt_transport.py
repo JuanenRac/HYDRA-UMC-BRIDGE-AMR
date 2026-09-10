@@ -60,8 +60,7 @@ def connect_with_retry(
     raises - connection refused, timeout), tolerating the real startup
     race a systemd unit for this bridge hits if it starts before
     HYDRA-UMC-MQTT-BROKER is listening yet (both are independent systemd
-    units with no ordering guarantee across a real reboot - found in an
-    ecosystem-wide software-improvements audit). Only OSError is retried;
+    units with no ordering guarantee across a real reboot). Only OSError is retried;
     anything else is a real bug, not a transient startup race, and
     propagates immediately. `sleep` is injectable so tests can prove the
     retry/give-up behavior without a real multi-second wait."""
@@ -182,8 +181,7 @@ class Vda5050Publisher:
             # nodePosition for a node the AGV already has a fixed location
             # for.
             if dispatch.local_x is not None and dispatch.local_y is not None:
-                # Found in an ecosystem-wide software-improvements audit
-                # (AMR-02): VDA 5050 2.0.0's own real <nodePosition> schema
+                # AMR-02: VDA 5050 2.0.0's own real <nodePosition> schema
                 # requires x, y AND mapId together
                 # (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema) -
                 # a message with x/y but no mapId is not spec-valid, so a
@@ -211,7 +209,7 @@ class Vda5050Publisher:
         except OSError as error:
             return PublishResult(False, f"MQTT publish failed: {error}", topic)
 
-        # Found in an ecosystem-wide software-improvements audit (AMR-01):
+        # AMR-01:
         # paho-mqtt's own real Client.publish() does NOT raise on "not
         # connected" - it returns an MQTTMessageInfo whose own `.rc` field
         # (mqtt.MQTT_ERR_SUCCESS == 0 on success, MQTT_ERR_NO_CONN == 4

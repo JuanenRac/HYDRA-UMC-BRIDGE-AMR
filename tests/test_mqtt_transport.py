@@ -117,7 +117,7 @@ class Vda5050PublisherTests(unittest.TestCase):
         self.assertIn("broker unreachable", result.reason)
 
     def test_a_disconnected_client_rc_is_reported_not_silently_true_regression_for_amr_01(self):
-        # AMR-01 (found in an ecosystem-wide software-improvements audit):
+        # AMR-01:
         # paho-mqtt's own real Client.publish() does not raise when there
         # is no live connection - it returns rc=MQTT_ERR_NO_CONN (4).
         client = FakeMqttClient()
@@ -166,9 +166,9 @@ class OpenMqttClientTests(unittest.TestCase):
 
 class ConnectWithRetryTests(unittest.TestCase):
     """connect_with_retry() is pure - no real paho-mqtt/broker needed to
-    prove the real startup-race tolerance an ecosystem-wide software
-    audit found missing here (this bridge used to fail outright if it
-    started before HYDRA-UMC-MQTT-BROKER was listening yet)."""
+    prove the real startup-race tolerance that was missing here (this
+    bridge used to fail outright if it started before
+    HYDRA-UMC-MQTT-BROKER was listening yet)."""
 
     def test_succeeds_on_the_first_try_without_sleeping(self):
         from hydra_umc_bridge_amr import connect_with_retry
