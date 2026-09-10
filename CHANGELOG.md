@@ -34,7 +34,7 @@ against it (8 tests). 42 tests total.
 
 ## [0.0.6] - V07-014: the SDK's own real phase-construction rejection reached this bridge's test suite
 
-A second independent revalidation audit found this bridge's own
+A second, closer review found this bridge's own
 `test_unknown_sdk_phase_fails_closed_instead_of_guessing_an_action` still
 constructed a `BridgeJob` directly with a raw `"SOME_FUTURE_PHASE"`
 string - HYDRA-UMC-SDK's own real fix (REV-008) now rejects that AT
@@ -50,7 +50,7 @@ the old construction succeed again.
 
 ## [0.0.5] - Real publish-result rc check and a real map identity
 
-- **AMR-01 (found in an ecosystem-wide software-improvements audit):**
+- **AMR-01:**
   `Vda5050Publisher.publish()` ignored the return value of
   `client.publish()` entirely and always reported `published=True`
   unless an `OSError` was raised - but paho-mqtt's own real
@@ -63,7 +63,7 @@ the old construction succeed again.
   is now reported honestly as "queued for MQTT delivery" rather than
   implying AGV acceptance - a real order-ACK/state-topic correlation is
   separate, larger future work, not folded into this fix.
-- **AMR-02 (found in the same audit):** a real VDA 5050 2.0.0
+- **AMR-02:** a real VDA 5050 2.0.0
   `<nodePosition>` requires `x`, `y` AND `mapId` together
   (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema) -
   this bridge had no concept of a map at all, so its emitted order could
@@ -82,8 +82,7 @@ the old construction succeed again.
 ## Maturity raised to established
 
 - **`open_mqtt_client()`'s initial MQTT connect now retries with backoff**
-  (`connect_with_retry()`, new) - found in an ecosystem-wide
-  software-improvements audit: this bridge used to fail outright if
+  (`connect_with_retry()`, new) - this bridge used to fail outright if
   called before HYDRA-UMC-MQTT-BROKER was listening yet, a real race
   between two independent systemd units with no ordering guarantee
   across a reboot. Only `OSError` (what an unreachable broker actually
