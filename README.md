@@ -75,10 +75,13 @@ HYDRA-UMC-BRIDGE-AMR/
 │       └── mqtt_transport.py    # Real VDA 5050 MQTT publish - order/instantActions, gated dispatch only
 ├── tests/
 │   ├── test_coordinator.py      # Deterministic unit tests, incl. hand-checkable geometry
-│   └── test_mqtt_transport.py   # VDA 5050 topic/message shape tests against a fake MQTT client
+│   ├── test_mqtt_transport.py   # VDA 5050 topic/message shape tests against a fake MQTT client
+│   ├── vda5050_emulator.py      # Protocol-faithful VDA 5050 AGV emulator (realistic test double)
+│   └── test_vda5050_emulator.py # Bridge behaviour against the VDA 5050 AGV emulator
 ├── tools/
 │   ├── build_test.py            # Non-mutating compile + test runner (build-test.bat/.sh)
 │   ├── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
+│   ├── ci_validate.py           # Dependency-free, non-destructive CI baseline (used by .github/workflows/ci.yml)
 │   └── inspect_order_plan.py    # Prints the static order plan (no transport opened)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Scope, compatible platforms, scripts, hardware acceptance gate
