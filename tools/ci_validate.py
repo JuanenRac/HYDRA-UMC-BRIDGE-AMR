@@ -166,6 +166,20 @@ def main() -> int:
         fail("public files must not reference private documentation")
     if result.returncode not in (0, 1):
         fail("could not check public/private documentation boundary")
+    # Prose that names this ecosystem's private planning or audit material.
+    # Each phrase is split across a "+" so this validator's own source never
+    # contains the literal string it is searching for.
+    _private_phrases = ("BIB" + "LIA HYDRA" + "-UMC", "private development" + " plan",
+                        "plan de desarrollo" + " privado", "internal work" + " log",
+                        "registro de trabajo" + " interno")
+    _pcmd = ["git", "grep", "-n", "-I", "-i", "-F"]
+    for _p in _private_phrases:
+        _pcmd += ["-e", _p]
+    result2 = subprocess.run(tuple(_pcmd), cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    if result2.returncode == 0:
+        fail("public files must not reference private planning or audit documents")
+    if result2.returncode not in (0, 1):
+        fail("could not check public/private documentation boundary")
     print(f"CI_VALIDATION=PASS project={manifest['name']} version={manifest['version']}")
     return 0
 
