@@ -6,6 +6,32 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.7] - A protocol-faithful VDA 5050 2.0.0 AGV emulator, not a record-only fake
+
+Until now the only MQTT double here was `FakeMqttClient` - it records
+`(topic, payload)` and never inspects either. New
+`tests/vda5050_emulator.py` is a real `MqttPublisher`-seam AGV that, on
+every `publish()`: splits the real
+`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{channel}`
+topic and rejects one addressed to a different AGV; validates the JSON
+body against the real VDA 5050 2.0.0 order/instantActions schema shape
+(the required header with a strictly-increasing integer `headerId`; for
+`order` - `orderId`/`orderUpdateId`/`nodes`/`edges`, each node's
+`nodeId`/`sequenceId`/`released`, a `nodePosition` carrying `x` AND `y`
+AND `mapId` when present, every action's `actionId`/`actionType`/
+`blockingType` in {NONE,SOFT,SINGLE,HARD}; for `instantActions` - a
+non-empty `actions` list); then executes it - an accepted order becomes
+the active order whose single node action goes WAITING -> RUNNING -> 
+FINISHED on `step()`, and a `CANCEL_ORDER` instant action preempts it
+(running action -> FAILED, order dropped, `driving` -> False) exactly
+like real `cancelOrder` on the instantActions topic. `set_estop()`,
+`set_field_violation()`, `set_operating_mode()` drive the physical side;
+`emit_state()` returns a real VDA 5050 `state` message with
+`safetyState`/`operatingMode`/`batteryState`/`actionStates`. New
+`tests/test_vda5050_emulator.py` runs this bridge's real
+`AmrCoordinator.dispatch()` + `Vda5050Publisher.publish()` end to end
+against it (8 tests). 42 tests total.
+
 ## [0.0.6] - V07-014: the SDK's own real phase-construction rejection reached this bridge's test suite
 
 A second independent revalidation audit found this bridge's own
