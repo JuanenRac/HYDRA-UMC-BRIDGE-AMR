@@ -161,7 +161,7 @@ def main() -> int:
         fail(".gitignore must exclude .env and retain .env.example")
     validate_markdown_links()
     private_marker = "SON" + "NET"
-    result = subprocess.run(("git", "grep", "-n", "-I", "--", private_marker), cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    result = subprocess.run(("git", "grep", "-n", "-I", "--", private_marker), cwd=ROOT, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if result.returncode == 0:
         fail("public files must not reference private documentation")
     if result.returncode not in (0, 1):
@@ -175,7 +175,7 @@ def main() -> int:
     _pcmd = ["git", "grep", "-n", "-I", "-i", "-F"]
     for _p in _private_phrases:
         _pcmd += ["-e", _p]
-    result2 = subprocess.run(tuple(_pcmd), cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    result2 = subprocess.run(tuple(_pcmd), cwd=ROOT, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     if result2.returncode == 0:
         fail("public files must not reference private planning or audit documents")
     if result2.returncode not in (0, 1):
