@@ -22,6 +22,10 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+> **Ehrlichkeitscheck - was heute wirklich läuft:** die Koordinatenrahmen-Transformation und das Job-Gate (`coordinator.py` mit `AmrCoordinator`/`FrameTransform`, das jeden Dispatch durch das echte `evaluate_job()` von `HYDRA-UMC-SDK` leitet) sowie die VDA-5050-Nachrichtenform-/Topic-Logik (`mqtt_transport.py` mit `Vda5050Publisher`) sind real und durch 42 bestehende Unit-Tests abgedeckt (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, plus `test_vda5050_emulator.py`, das die Bridge gegen einen protokolltreuen, von Hand geschriebenen VDA-5050-AGV-Emulator laufen lässt, keinen echten im Produktionsbetrieb). Nichts davon wurde gegen einen echten MQTT-Broker, einen echten `paho-mqtt`-Client oder einen physischen AMR/Flottenmanager getestet - `test_mqtt_transport.py`s eigener `FakeMqttClient` ersetzt `paho-mqtt` vollständig (die echte Bibliothek muss für das Bestehen dieser Tests nicht einmal installiert sein), und es gibt noch keinen echten `run`-Befehl, weil noch kein reales Flottenmanager-Transportprotokoll ausgewählt oder validiert wurde. Siehe „Aktueller Status & Nächste Schritte" weiter unten, das dies bereits klar sagt, sowie `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
+
+---
+
 ## 1. 🛠️ TECHNISCHER ÜBERBLICK
 
 **HYDRA-UMC-BRIDGE-AMR** ist die bidirektionale, High-Level-Koordinationsgrenze zwischen HYDRA-UMC und einer AGV-/AMR-Flotte (autonomer mobiler Roboter), erreichbar über Wi-Fi, Bluetooth oder eine Mobilfunkverbindung (4G/5G). Sie tut genau zwei echte Dinge, bevor ein Auftrag einen AMR erreicht: Sie löst eine Koordinate aus dem Fabrik-Koordinatensystem mittels einer echten, von Hand nachprüfbaren 2D-Starrkörpertransformation in das eigene lokale Koordinatensystem dieses spezifischen AMR auf und bildet eine Auftragsphase auf eine minimale, an VDA 5050 angelehnte Order-Aktion ab. Sie hat keine eigene Navigations-, Lokalisierungs- oder Hindernisvermeidungslogik und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen.

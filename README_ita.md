@@ -22,6 +22,10 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+> **Verifica di onestà - cosa funziona davvero oggi:** la trasformazione del sistema di coordinate e il gate dei lavori (`coordinator.py` con `AmrCoordinator`/`FrameTransform`, che fa passare ogni dispatch attraverso il vero `evaluate_job()` di `HYDRA-UMC-SDK`) e la logica di forma dei messaggi/topic VDA 5050 (`mqtt_transport.py` con `Vda5050Publisher`) sono reali e coperte da 42 test unitari superati (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, più `test_vda5050_emulator.py` che esegue il bridge contro un emulatore AGV VDA 5050 fedele al protocollo ma scritto a mano, non uno reale in produzione). Nulla di tutto ciò è stato testato contro un vero broker MQTT, un vero client `paho-mqtt`, o un AMR/gestore di flotta fisico - il `FakeMqttClient` proprio di `test_mqtt_transport.py` sostituisce interamente `paho-mqtt` (la libreria reale non deve nemmeno essere installata perché questi test passino), e non esiste ancora un comando `run` dal vivo perché nessun trasporto reale per un gestore di flotta è stato scelto o validato. Vedi "Stato attuale e prossimi passi" qui sotto, che lo dice già chiaramente, e `CHANGELOG.md` per cosa è stato esattamente consegnato finora.
+
+---
+
 ## 1. 🛠️ PANORAMICA TECNICA
 
 **HYDRA-UMC-BRIDGE-AMR** è il confine di coordinamento bidirezionale e di alto livello tra HYDRA-UMC e una flotta AGV/AMR (robot mobile autonomo), raggiungibile via Wi-Fi, Bluetooth o un collegamento cellulare (4G/5G). Fa esattamente due cose reali prima che un lavoro raggiunga un AMR: risolve una coordinata del sistema di riferimento di fabbrica nel sistema di riferimento locale proprio di quello specifico AMR tramite una trasformazione rigida 2D reale e verificabile a mano, e mappa una fase di lavoro su un'azione d'ordine minima ispirata a VDA 5050. Non ha alcuna logica propria di navigazione, localizzazione o evitamento ostacoli, e non può aggirare HYDRA-UMC-SERVER, i limiti dell'MCU, i watchdog o l'E-STOP.
