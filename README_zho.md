@@ -22,6 +22,10 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 42 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
+
+---
+
 ## 1. 🛠️ 技术概览
 
 **HYDRA-UMC-BRIDGE-AMR** 是 HYDRA-UMC 与 AGV/AMR(自主移动机器人)车队之间双向的高层协调边界,可通过 Wi-Fi、蓝牙或蜂窝(4G/5G)链路访问。在任务到达某台 AMR 之前,它只做两件真实的事情:通过一个真实的、可手工核验的 2D 刚体变换,把工厂坐标系中的坐标解算到那台具体 AMR 自身的本地坐标系中;并把一个任务阶段映射为一个最小化的、受 VDA-5050 启发的订单动作。它没有任何自己的导航、定位或避障逻辑,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停(E-STOP)。

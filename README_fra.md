@@ -22,6 +22,10 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+> **Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** la transformation de repère de coordonnées et la porte de validation des tâches (`coordinator.py` avec `AmrCoordinator`/`FrameTransform`, faisant passer chaque envoi par le propre `evaluate_job()` de `HYDRA-UMC-SDK`) ainsi que la logique de forme de message/topic VDA 5050 (`mqtt_transport.py` avec `Vda5050Publisher`) sont réelles et couvertes par 42 tests unitaires qui passent (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, plus `test_vda5050_emulator.py` qui fait tourner le bridge contre un émulateur d'AGV VDA 5050 fidèle au protocole mais écrit à la main, pas un véritable AGV en production). Rien de tout cela n'a été testé contre un vrai broker MQTT, un vrai client `paho-mqtt`, ou un AMR/gestionnaire de flotte physique - le `FakeMqttClient` propre à `test_mqtt_transport.py` remplace entièrement `paho-mqtt` (la vraie bibliothèque n'a même pas besoin d'être installée pour que ces tests passent), et il n'existe pas encore de commande `run` en direct car aucun transport réel de gestionnaire de flotte n'a été choisi ni validé. Voir « État actuel et prochaines étapes » ci-dessous, qui le dit déjà clairement, et `CHANGELOG.md` pour ce qui a été exactement livré jusqu'à présent.
+
+---
+
 ## 1. 🛠️ APERÇU TECHNIQUE
 
 **HYDRA-UMC-BRIDGE-AMR** est la frontière de coordination bidirectionnelle et haut niveau entre HYDRA-UMC et une flotte AGV/AMR (robot mobile autonome), accessible par Wi-Fi, Bluetooth ou une liaison cellulaire (4G/5G). Elle fait exactement deux choses réelles avant qu'une tâche n'atteigne un AMR : résoudre une coordonnée du repère usine vers le repère local propre de cet AMR au moyen d'une transformation rigide 2D réelle et vérifiable à la main, et mapper une phase de tâche vers une action d'ordre minimale inspirée de VDA 5050. Elle n'a aucune logique propre de navigation, de localisation ni d'évitement d'obstacles, et elle ne peut pas contourner HYDRA-UMC-SERVER, les limites du MCU, les watchdogs ou l'E-STOP.
