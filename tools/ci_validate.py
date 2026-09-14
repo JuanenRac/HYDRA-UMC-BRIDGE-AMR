@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 
 
+from _doc_policy import check_public_private_boundary
+
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED_DOCUMENTS = (
     "README.md", "README_spa.md", "README_fra.md", "README_ita.md",
@@ -160,26 +162,9 @@ def main() -> int:
     if not re.search(r"(?m)^\.env(?:\.|$|\*)", gitignore) or not re.search(r"(?m)^!\.env\.example$", gitignore):
         fail(".gitignore must exclude .env and retain .env.example")
     validate_markdown_links()
-    private_marker = "SON" + "NET"
-    result = subprocess.run(("git", "grep", "-n", "-I", "--", private_marker), cwd=ROOT, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
-    if result.returncode == 0:
-        fail("public files must not reference private documentation")
-    if result.returncode not in (0, 1):
-        fail("could not check public/private documentation boundary")
-    # Prose that names this ecosystem's private planning or audit material.
-    # Each phrase is split across a "+" so this validator's own source never
-    # contains the literal string it is searching for.
-    _private_phrases = ("BIB" + "LIA HYDRA" + "-UMC", "private development" + " plan",
-                        "plan de desarrollo" + " privado", "internal work" + " log",
-                        "registro de trabajo" + " interno")
-    _pcmd = ["git", "grep", "-n", "-I", "-i", "-F"]
-    for _p in _private_phrases:
-        _pcmd += ["-e", _p]
-    result2 = subprocess.run(tuple(_pcmd), cwd=ROOT, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
-    if result2.returncode == 0:
-        fail("public files must not reference private planning or audit documents")
-    if result2.returncode not in (0, 1):
-        fail("could not check public/private documentation boundary")
+    doc_policy_error = check_public_private_boundary(ROOT)
+    if doc_policy_error:
+        fail(doc_policy_error)
     print(f"CI_VALIDATION=PASS project={manifest['name']} version={manifest['version']}")
     return 0
 
