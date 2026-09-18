@@ -1,6 +1,6 @@
 <!-- =============================================================================
 HYDRA-UMC-BRIDGE-AMR - Change history
-Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 GPL-3.0-or-later - see LICENSE
 ============================================================================= -->
 
@@ -32,12 +32,12 @@ like real `cancelOrder` on the instantActions topic. `set_estop()`,
 `AmrCoordinator.dispatch()` + `Vda5050Publisher.publish()` end to end
 against it (8 tests). 42 tests total.
 
-## [0.0.6] - V07-014: the SDK's own real phase-construction rejection reached this bridge's test suite
+## [0.0.6] - The SDK's own real phase-construction rejection reached this bridge's test suite
 
 A second, closer review found this bridge's own
 `test_unknown_sdk_phase_fails_closed_instead_of_guessing_an_action` still
 constructed a `BridgeJob` directly with a raw `"SOME_FUTURE_PHASE"`
-string - HYDRA-UMC-SDK's own real fix (REV-008) now rejects that AT
+string - HYDRA-UMC-SDK's own real fix now rejects that AT
 CONSTRUCTION TIME, so the test never even reached the coordinator's own
 assertion. Split in two, same as HYDRA-UMC-BRIDGE-UAV's own
 already-updated test: a new
@@ -50,7 +50,7 @@ the old construction succeed again.
 
 ## [0.0.5] - Real publish-result rc check and a real map identity
 
-- **AMR-01:**
+- **Fixed a real, silently-swallowed publish failure:**
   `Vda5050Publisher.publish()` ignored the return value of
   `client.publish()` entirely and always reported `published=True`
   unless an `OSError` was raised - but paho-mqtt's own real
@@ -63,7 +63,7 @@ the old construction succeed again.
   is now reported honestly as "queued for MQTT delivery" rather than
   implying AGV acceptance - a real order-ACK/state-topic correlation is
   separate, larger future work, not folded into this fix.
-- **AMR-02:** a real VDA 5050 2.0.0
+- **Fixed a missing required map identity:** a real VDA 5050 2.0.0
   `<nodePosition>` requires `x`, `y` AND `mapId` together
   (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema) -
   this bridge had no concept of a map at all, so its emitted order could
