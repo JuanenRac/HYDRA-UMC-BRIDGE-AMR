@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 
 ### 核心特性:
 * ✅ **真实的、可手工核验的坐标系变换:** `FrameTransform` 根据某台 AMR 在工厂地面上真实的原点/朝向,把工厂坐标系中的 `(x, y)` 映射到该 AMR 自身的本地坐标系——通过一个恒等情形、一个纯平移、一个 90 度朝向旋转以及一个真实的往返测试进行了验证。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
-* ✅ **真实的、受 VDA-5050 启发的订单动作词汇:** `MOVE_TO_STAGING`、`PICK_LOAD`、`MOVE_TO_DESTINATION`、`DROP_LOAD`、`MOVE_TO_HOME`、`CANCEL_ORDER`——最后一个与 VDA 5050 自身用于取消订单的真实动作名称一致。*(已实现)*
+* ✅ **真实的、受 VDA-5050 启发的订单动作词汇:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` 发布到真实的 VDA 5050 `order` 主题(排队,属于路线的一部分);`CANCEL_ORDER` 发布到真实且独立的 `instantActions` 主题(即时,绕过订单队列)——与 VDA 5050 自身的 `cancelOrder` 动作名称及其真实通道均一致,已对照[官方 schema](https://github.com/VDA5050/VDA5050/tree/main/json_schemas)核实。*(已实现)*
 * ✅ **真实的按动作坐标校验:** 缺少 `x`/`y`,或携带非数值坐标的移动动作,会在变换运行之前就在本地被拒绝。*(已实现,已测试)*
 * ✅ **真实的共享安全门控:** 每个通过 `AmrCoordinator.dispatch()` 派发的任务都会由 `HYDRA-UMC-SDK` 的 `bridge_contract` 中的 `evaluate_job()` 评估,这与所有兄弟桥接以及 HYDRA-UMC-SERVER 使用的是同一个门控;生产性阶段需要外部机器处于 `IDLE` 且 HYDRA-UMC 单元处于 `READY`,而 `CANCEL_ORDER` 在故障期间仍可请求。*(已实现)*
 * ✅ **安全拒绝的阶段路由与静态证据:** 未知的未来 SDK 阶段会被拒绝。`inspect_order_plan.py` 会输出静态模式 `1.0` 的订单计划,且不会打开任何传输通道。*(已实现,已测试)*
