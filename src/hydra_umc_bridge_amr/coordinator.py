@@ -37,7 +37,7 @@ class FrameTransform:
     origin_x: float
     origin_y: float
     heading_rad: float
-    # AMR-02: a
+    # a
     # real VDA 5050 2.0.0 <nodePosition> requires x, y AND mapId (see
     # github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema -
     # "required": ["x", "y", "mapId"]) - this bridge's own emitted order
@@ -89,7 +89,7 @@ class AmrDispatch:
     local_x: float | None = None
     local_y: float | None = None
     # The map this local_x/local_y pair is expressed against - see
-    # FrameTransform.map_id's own comment (AMR-02). Populated alongside
+    # FrameTransform.map_id's own comment. Populated alongside
     # local_x/local_y for exactly the same set of actions, None for the
     # same reason local_x/local_y are None otherwise.
     map_id: str | None = None
