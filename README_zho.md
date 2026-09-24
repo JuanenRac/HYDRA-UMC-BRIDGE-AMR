@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 42 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
+> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 48 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
 
 ---
 
@@ -76,10 +76,12 @@ HYDRA-UMC-BRIDGE-AMR/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
 │       ├── coordinator.py       # AmrCoordinator + FrameTransform:无依赖的订单门控
-│       └── mqtt_transport.py    # 真实的 VDA 5050 MQTT 发布 - order/instantActions,仅限已验证的 dispatch
+│       ├── mqtt_transport.py    # 真实的 VDA 5050 MQTT 发布 - order/instantActions,仅限已验证的 dispatch
+│       └── simulated_amr.py     # 明确的订单状态表 + 模拟 AMR:无传输、无真实运动
 ├── tests/
 │   ├── test_coordinator.py      # 确定性单元测试,含可手工核验的几何计算
 │   ├── test_mqtt_transport.py   # 针对伪 MQTT 客户端的 VDA 5050 topic/消息格式测试
+│   ├── test_simulated_amr.py    # 状态表与模拟 AMR 的测试
 │   ├── vda5050_emulator.py      # 协议忠实的 VDA 5050 AGV 模拟器（真实的测试替身）
 │   └── test_vda5050_emulator.py # 针对 VDA 5050 AGV 模拟器的 bridge 行为
 ├── tools/
@@ -119,7 +121,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py`——共 42 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
+`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py`——共 48 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
 
 ---
 

@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、42件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
+> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、48件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
 
 ---
 
@@ -76,10 +76,12 @@ HYDRA-UMC-BRIDGE-AMR/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
 │       ├── coordinator.py       # AmrCoordinator + FrameTransform: 依存関係なしのオーダーゲート
-│       └── mqtt_transport.py    # 実際のVDA 5050 MQTT publish - order/instantActions、検証済みdispatchのみ
+│       ├── mqtt_transport.py    # 実際のVDA 5050 MQTT publish - order/instantActions、検証済みdispatchのみ
+│       └── simulated_amr.py     # 明示的なオーダー状態テーブル + シミュレートAMR:トランスポートなし、実動作なし
 ├── tests/
 │   ├── test_coordinator.py      # 決定論的ユニットテスト(手計算で検証可能な幾何学を含む)
 │   ├── test_mqtt_transport.py   # 偽のMQTTクライアントに対するVDA 5050トピック/メッセージ形状テスト
+│   ├── test_simulated_amr.py    # 状態テーブルとシミュレートAMRのテスト
 │   ├── vda5050_emulator.py      # プロトコル忠実な VDA 5050 AGV エミュレータ（現実的なテストダブル）
 │   └── test_vda5050_emulator.py # VDA 5050 AGV エミュレータに対する bridge の振る舞い
 ├── tools/
@@ -119,7 +121,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py` - 42件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
+`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py` - 48件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
 
 ---
 

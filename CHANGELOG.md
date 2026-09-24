@@ -6,6 +6,20 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.8] - Explicit AMR state table and a simulated AMR
+
+- **Explicit order-state table and a simulated AMR** (`simulated_amr.py`):
+  `TRANSITIONS` states which order action is legal from which AMR state
+  (`IDLE`, `MOVING`, `LOADED_WAITING`, `UNLOADING`); a step that is not a
+  legal move from the current state is refused and leaves the state
+  untouched. `CANCEL_ORDER` is legal from every state and always ends in
+  `IDLE`. `SimulatedAmr` follows the table with pure bookkeeping - it
+  imports no transport and cannot move anything real - so a whole job,
+  including stop and recovery, can be rehearsed before a vehicle is
+  connected. A dispatch the coordinator already refused never changes
+  state. Six new tests (48 in total).
+- Tidied a comment in `coordinator.py` that had lost its first words.
+
 ## [0.0.7] - A protocol-faithful VDA 5050 2.0.0 AGV emulator, not a record-only fake
 
 Until now the only MQTT double here was `FakeMqttClient` - it records

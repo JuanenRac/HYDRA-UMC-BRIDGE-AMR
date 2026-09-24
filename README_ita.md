@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **Verifica di onestà - cosa funziona davvero oggi:** la trasformazione del sistema di coordinate e il gate dei lavori (`coordinator.py` con `AmrCoordinator`/`FrameTransform`, che fa passare ogni dispatch attraverso il vero `evaluate_job()` di `HYDRA-UMC-SDK`) e la logica di forma dei messaggi/topic VDA 5050 (`mqtt_transport.py` con `Vda5050Publisher`) sono reali e coperte da 42 test unitari superati (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, più `test_vda5050_emulator.py` che esegue il bridge contro un emulatore AGV VDA 5050 fedele al protocollo ma scritto a mano, non uno reale in produzione). Nulla di tutto ciò è stato testato contro un vero broker MQTT, un vero client `paho-mqtt`, o un AMR/gestore di flotta fisico - il `FakeMqttClient` proprio di `test_mqtt_transport.py` sostituisce interamente `paho-mqtt` (la libreria reale non deve nemmeno essere installata perché questi test passino), e non esiste ancora un comando `run` dal vivo perché nessun trasporto reale per un gestore di flotta è stato scelto o validato. Vedi "Stato attuale e prossimi passi" qui sotto, che lo dice già chiaramente, e `CHANGELOG.md` per cosa è stato esattamente consegnato finora.
+> **Verifica di onestà - cosa funziona davvero oggi:** la trasformazione del sistema di coordinate e il gate dei lavori (`coordinator.py` con `AmrCoordinator`/`FrameTransform`, che fa passare ogni dispatch attraverso il vero `evaluate_job()` di `HYDRA-UMC-SDK`) e la logica di forma dei messaggi/topic VDA 5050 (`mqtt_transport.py` con `Vda5050Publisher`) sono reali e coperte da 48 test unitari superati (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, più `test_vda5050_emulator.py` che esegue il bridge contro un emulatore AGV VDA 5050 fedele al protocollo ma scritto a mano, non uno reale in produzione). Nulla di tutto ciò è stato testato contro un vero broker MQTT, un vero client `paho-mqtt`, o un AMR/gestore di flotta fisico - il `FakeMqttClient` proprio di `test_mqtt_transport.py` sostituisce interamente `paho-mqtt` (la libreria reale non deve nemmeno essere installata perché questi test passino), e non esiste ancora un comando `run` dal vivo perché nessun trasporto reale per un gestore di flotta è stato scelto o validato. Vedi "Stato attuale e prossimi passi" qui sotto, che lo dice già chiaramente, e `CHANGELOG.md` per cosa è stato esattamente consegnato finora.
 
 ---
 
@@ -76,10 +76,12 @@ HYDRA-UMC-BRIDGE-AMR/
 │   └── hydra_umc_bridge_amr/
 │       ├── __init__.py
 │       ├── coordinator.py       # AmrCoordinator + FrameTransform: porta d'ordine priva di dipendenze
-│       └── mqtt_transport.py    # Publish MQTT VDA 5050 reale - order/instantActions, solo dispatch già validato
+│       ├── mqtt_transport.py    # Publish MQTT VDA 5050 reale - order/instantActions, solo dispatch già validato
+│       └── simulated_amr.py     # Tabella esplicita degli stati d'ordine + AMR simulato: nessun trasporto, nessun movimento reale
 ├── tests/
 │   ├── test_coordinator.py      # Test unitari deterministici, incl. geometria verificabile a mano
 │   ├── test_mqtt_transport.py   # Test di forma topic/messaggio VDA 5050 contro un client MQTT fittizio
+│   ├── test_simulated_amr.py    # Test della tabella degli stati e dell'AMR simulato
 │   ├── vda5050_emulator.py      # Emulatore VDA 5050 AGV fedele al protocollo (test double realistico)
 │   └── test_vda5050_emulator.py # Comportamento del bridge rispetto all'emulatore VDA 5050 AGV
 ├── tools/
@@ -122,7 +124,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` compila ogni modulo sotto `src/` con `py_compile` ed esegue l'intera suite `unittest` individuata sotto `tests/` (`test_coordinator.py`, `test_mqtt_transport.py`, `test_vda5050_emulator.py` - 42 test) - in modo deterministico, senza connessione reale a un AMR, senza rete e senza cambio di versione/CHANGELOG. `build` esegue prima quella stessa validazione e, solo in caso di successo, chiama `tools/bump_version.py` per sincronizzare la versione tra `pyproject.toml`, `hydra-umc.project.json` e `CHANGELOG.md`. Non esiste ancora un comando `run` con hardware reale - serve un adattatore di trasporto del gestore di flotta validato e un AMR/flotta reale.
+`build-test` compila ogni modulo sotto `src/` con `py_compile` ed esegue l'intera suite `unittest` individuata sotto `tests/` (`test_coordinator.py`, `test_mqtt_transport.py`, `test_vda5050_emulator.py` - 48 test) - in modo deterministico, senza connessione reale a un AMR, senza rete e senza cambio di versione/CHANGELOG. `build` esegue prima quella stessa validazione e, solo in caso di successo, chiama `tools/bump_version.py` per sincronizzare la versione tra `pyproject.toml`, `hydra-umc.project.json` e `CHANGELOG.md`. Non esiste ancora un comando `run` con hardware reale - serve un adattatore di trasporto del gestore di flotta validato e un AMR/flotta reale.
 
 ---
 

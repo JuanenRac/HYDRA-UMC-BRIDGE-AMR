@@ -9,6 +9,7 @@
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 
 from .coordinator import AmrCoordinator, AmrDispatch, AmrOrderPlan, FrameTransform
+from .simulated_amr import TRANSITIONS, AmrState, SimulatedAmr, StepResult
 from .mqtt_transport import (
     MqttPublisher,
     PublishResult,
@@ -27,6 +28,10 @@ __all__ = [
     "AmrDispatch",
     "AmrOrderPlan",
     "FrameTransform",
+    "AmrState",
+    "SimulatedAmr",
+    "StepResult",
+    "TRANSITIONS",
     "Vda5050Publisher",
     "Vda5050Target",
     "PublishResult",
