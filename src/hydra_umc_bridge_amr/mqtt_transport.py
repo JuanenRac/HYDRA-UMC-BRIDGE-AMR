@@ -181,7 +181,7 @@ class Vda5050Publisher:
             # nodePosition for a node the AGV already has a fixed location
             # for.
             if dispatch.local_x is not None and dispatch.local_y is not None:
-                # AMR-02: VDA 5050 2.0.0's own real <nodePosition> schema
+                # VDA 5050 2.0.0's own real <nodePosition> schema
                 # requires x, y AND mapId together
                 # (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema) -
                 # a message with x/y but no mapId is not spec-valid, so a
@@ -209,7 +209,7 @@ class Vda5050Publisher:
         except OSError as error:
             return PublishResult(False, f"MQTT publish failed: {error}", topic)
 
-        # AMR-01:
+        # :
         # paho-mqtt's own real Client.publish() does NOT raise on "not
         # connected" - it returns an MQTTMessageInfo whose own `.rc` field
         # (mqtt.MQTT_ERR_SUCCESS == 0 on success, MQTT_ERR_NO_CONN == 4

@@ -19,7 +19,7 @@ from hydra_umc_bridge_amr import AmrCoordinator, AmrDispatch, FrameTransform, Vd
 
 class FakePublishResult:
     """Stands in for paho-mqtt's own real MQTTMessageInfo - only the `.rc`
-    field this module actually reads (AMR-01's own regression)."""
+    field this module actually reads (this project's own regression)."""
 
     def __init__(self, rc: int = 0):
         self.rc = rc
@@ -70,7 +70,7 @@ class Vda5050PublisherTests(unittest.TestCase):
         self.assertEqual(payload["manufacturer"], "hydra-umc")
         self.assertEqual(payload["serialNumber"], "amr-1")
         self.assertEqual(len(payload["nodes"]), 1)
-        # AMR-02 regression: a real VDA 5050 nodePosition requires mapId
+        # regression: a real VDA 5050 nodePosition requires mapId
         # alongside x/y (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema).
         self.assertEqual(payload["nodes"][0]["nodePosition"], {"x": 1.5, "y": 2.5, "mapId": "site-a"})
         self.assertEqual(payload["nodes"][0]["actions"][0]["actionType"], "MOVE_TO_DESTINATION")
@@ -117,7 +117,7 @@ class Vda5050PublisherTests(unittest.TestCase):
         self.assertIn("broker unreachable", result.reason)
 
     def test_a_disconnected_client_rc_is_reported_not_silently_true_regression_for_amr_01(self):
-        # AMR-01:
+        # :
         # paho-mqtt's own real Client.publish() does not raise when there
         # is no live connection - it returns rc=MQTT_ERR_NO_CONN (4).
         client = FakeMqttClient()
