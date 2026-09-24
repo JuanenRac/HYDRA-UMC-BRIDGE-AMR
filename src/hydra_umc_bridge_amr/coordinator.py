@@ -37,8 +37,7 @@ class FrameTransform:
     origin_x: float
     origin_y: float
     heading_rad: float
-    # a
-    # real VDA 5050 2.0.0 <nodePosition> requires x, y AND mapId (see
+    # A real VDA 5050 2.0.0 <nodePosition> requires x, y AND mapId (see
     # github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema -
     # "required": ["x", "y", "mapId"]) - this bridge's own emitted order
     # previously had no concept of a map at all, so it could never be
