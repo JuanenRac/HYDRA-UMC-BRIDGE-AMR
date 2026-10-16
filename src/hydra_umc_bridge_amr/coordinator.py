@@ -21,7 +21,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, evaluate_job
+from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState, evaluate_job
 
 
 @dataclass(frozen=True)
@@ -171,7 +171,7 @@ class AmrCoordinator:
         instant_actions = tuple(a for a in all_actions if a in self._INSTANT_ACTIONS)
         return AmrOrderPlan("1.1", "plan-only", order_actions, instant_actions)
 
-    def dispatch(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform) -> AmrDispatch:
+    def dispatch(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform, observed_machine_state: MachineState | None = None) -> AmrDispatch:
         action = self._phase_actions.get(job.phase)
         if action is None:
             return AmrDispatch(False, "none", "job phase has no mapped AMR order action")
@@ -188,6 +188,7 @@ class AmrCoordinator:
                 return AmrDispatch(False, action, f"x/y must be real numbers, got x={x_raw!r} y={y_raw!r}")
             map_id = transform.map_id
 
-        decision = evaluate_job(job, cell_state)
+        # `observed_machine_state` is what the fleet manager reported about this vehicle; when given it replaces the claim written in the job (see HYDRA-UMC-SDK's evaluate_job)
+        decision = evaluate_job(job, cell_state, observed_machine_state)
         channel = "instantActions" if action in self._INSTANT_ACTIONS else "order"
         return AmrDispatch(decision.allowed, action, decision.reason, local_x, local_y, map_id, channel=channel)

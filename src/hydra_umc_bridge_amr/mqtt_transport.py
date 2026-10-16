@@ -22,6 +22,7 @@ rejected AmrDispatch never reaches the network.
 from __future__ import annotations
 
 import json
+import secrets
 import time
 from dataclasses import dataclass
 from typing import Protocol
@@ -122,7 +123,15 @@ class PublishResult:
 
 
 class Vda5050Publisher:
-    """Build and publish a real VDA 5050 message for one already-gated AmrDispatch."""
+    """Build and publish a real VDA 5050 message for one already-gated AmrDispatch.
+
+    VDA 5050 refuses a new order that reuses the `orderId` of an earlier one with `orderUpdateId` 0, and a bridge that restarts counts its `headerId` from the beginning again:
+    an `orderId` made from the header id alone then collides with the orders of the previous run. The publisher therefore adds a random token of its own to the `orderId`
+    (one per publisher, so it differs after every restart), unless the caller names the order (`order_id`, for example the job id).
+    """
+
+    def __init__(self) -> None:
+        self._session = secrets.token_hex(4)
 
     def publish(
         self,
@@ -131,6 +140,7 @@ class Vda5050Publisher:
         header_id: int,
         timestamp_iso: str,
         dispatch: AmrDispatch,
+        order_id: str | None = None,
     ) -> PublishResult:
         # A rejected dispatch (the shared SDK gate already said no) must
         # never reach the network - the transport layer is not a second
@@ -194,7 +204,7 @@ class Vda5050Publisher:
                 node["nodePosition"] = {"x": dispatch.local_x, "y": dispatch.local_y, "mapId": dispatch.map_id}
             payload = {
                 **header,
-                "orderId": f"hydra-umc-{header_id}",
+                "orderId": order_id or f"hydra-umc-{self._session}-{header_id}",
                 "orderUpdateId": 0,
                 "nodes": [node],
                 # A single-node order has nothing to traverse - this bridge

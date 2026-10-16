@@ -10,7 +10,7 @@ GPL-3.0-or-later - see LICENSE
 
 # 🚗 HYDRA-UMC-BRIDGE-AMR
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🔗 HYDRA-UMC 与 AGV/AMR 车队之间无依赖的协调边界
 
@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 48 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
+> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 54 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
 
 ---
 
@@ -41,6 +41,7 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **真实的 VDA 5050 MQTT 发布者:** `mqtt_transport.py` 的 `Vda5050Publisher` 将一个已通过门控的调度作为真实的、符合规范的消息,发布到正确的真实主题上(`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`)——被拒绝的调度永远不会到达网络。*(已实现,在 `tests/test_mqtt_transport.py` 中测试)*
 * ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与运行")*
 * 🔜 **厂商专属的车队管理器 REST/WebSocket 适配器**(面向非 VDA 5050 原生的车队平台)——只有在选定并测试了该平台之后才会引入。*(计划中)*
+* ✅ **观测到的机器状态与重启后不重复的订单 ID：** `AmrCoordinator.dispatch()` 接受车队管理器上报的车辆状态，共享闸门使用它而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息）；`Vda5050Publisher` 给每个订单的 `orderId` 加上自己的令牌，这样重启后 `headerId` 从头计数时不会重用先前订单的 ID（VDA 5050 会拒绝）。*（已实现，已在 `tests/test_observed_and_order_ids.py` 中测试）*
 
 ---
 
@@ -82,6 +83,7 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_coordinator.py      # 确定性单元测试,含可手工核验的几何计算
 │   ├── test_mqtt_transport.py   # 针对伪 MQTT 客户端的 VDA 5050 topic/消息格式测试
 │   ├── test_simulated_amr.py    # 状态表与模拟 AMR 的测试
+│   ├── test_observed_and_order_ids.py # 观测到的机器状态与重启后不重复的订单 ID
 │   ├── vda5050_emulator.py      # 协议忠实的 VDA 5050 AGV 模拟器（真实的测试替身）
 │   └── test_vda5050_emulator.py # 针对 VDA 5050 AGV 模拟器的 bridge 行为
 ├── tools/
@@ -121,13 +123,13 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py`——共 48 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
+`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py`——共 54 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
 
 ---
 
 ## ✅ 当前状态与后续步骤
 
-**目前真实的部分:** 版本 `0.0.8`,作为一个无依赖协调核心(`AmrCoordinator`)是功能齐备的,配有真实的、经过手工验证的坐标系变换(`FrameTransform`)、安全拒绝的阶段路由、带有 VDA 5050 真实 order/instantActions 通道拆分的静态 `plan-only` 订单模式、一个真实的 VDA 5050 MQTT 发布者(`Vda5050Publisher`),以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
+**目前真实的部分:** 版本 `0.0.9`,作为一个无依赖协调核心(`AmrCoordinator`)是功能齐备的,配有真实的、经过手工验证的坐标系变换(`FrameTransform`)、安全拒绝的阶段路由、带有 VDA 5050 真实 order/instantActions 通道拆分的静态 `plan-only` 订单模式、一个真实的 VDA 5050 MQTT 发布者(`Vda5050Publisher`),以及已接入 CI 并带 SDK 检出的非变更式 build-test 脚本。
 
 **集成边界:** 本桥接只是一个协调边界——它不是导航或电机控制节点,也不能绕过 HYDRA-UMC-SERVER、MCU 限位、看门狗或急停;每个被派发的任务仍然要经过所有兄弟桥接使用的同一个共享门控。
 

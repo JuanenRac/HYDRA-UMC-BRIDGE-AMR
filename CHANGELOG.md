@@ -6,6 +6,12 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.0.9] - The gate can use the machine state the fleet reports, and VDA 5050 order ids no longer repeat after a restart
+
+- **Observed machine state.** `AmrCoordinator.dispatch()` takes the state the fleet manager reported for the vehicle as an optional argument; when it is given it replaces the `machine_state` a requester wrote in the job (a message anybody on the broker may publish) in the shared gate. Without it the claim is still used.
+- **Order ids.** VDA 5050 refuses a new order that reuses the `orderId` of an earlier one with `orderUpdateId` 0, and the order id was made from the header id alone, which starts again after a restart. `Vda5050Publisher` now adds a random token of its own to it (one per publisher), and a caller may name the order with `order_id`.
+- Six new tests (tests/test_observed_and_order_ids.py).
+
 ## [0.0.8] - Explicit AMR state table and a simulated AMR
 
 - **Explicit order-state table and a simulated AMR** (`simulated_amr.py`):
