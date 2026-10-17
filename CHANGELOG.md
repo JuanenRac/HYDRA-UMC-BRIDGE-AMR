@@ -6,6 +6,13 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.0] - Connects to a broker that demands credentials: user, password and TLS from the environment
+
+- The MQTT client now takes its credentials and TLS from the environment of the service (`HYDRA_MQTT_USERNAME`, `HYDRA_MQTT_PASSWORD` or `HYDRA_MQTT_PASSWORD_FILE`, `HYDRA_MQTT_TLS_CA`) through `hydra_umc_sdk.mqtt_connection`, so it can reach a production HYDRA-UMC-MQTT-BROKER, which refuses anonymous clients and evaluates its ACL for the identity of the credential.
+- An explicit `username`/`password` argument still wins, and a password without a user name is refused.
+- The client ID must start with the `clientIdPrefix` of the bridge's credential.
+- New `tests/test_mqtt_environment.py` (a fake paho client, so it runs without paho-mqtt) proves that the environment credentials and the CA reach the client, that the explicit ones win, that nothing set is an anonymous plain connection, and that a lonely password is refused.
+
 ## [0.0.9] - The gate can use the machine state the fleet reports, and VDA 5050 order ids no longer repeat after a restart
 
 - **Observed machine state.** `AmrCoordinator.dispatch()` takes the state the fleet manager reported for the vehicle as an optional argument; when it is given it replaces the `machine_state` a requester wrote in the job (a message anybody on the broker may publish) in the shared gate. Without it the claim is still used.

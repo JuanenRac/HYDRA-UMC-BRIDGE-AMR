@@ -27,6 +27,8 @@ import time
 from dataclasses import dataclass
 from typing import Protocol
 
+from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
+
 from .coordinator import AmrDispatch
 
 
@@ -87,6 +89,8 @@ def open_mqtt_client(
     keepalive_seconds: int = 60,
     max_connect_attempts: int = 5,
     connect_retry_delay_seconds: float = 2.0,
+    username: str | None = None,
+    password: str | None = None,
 ) -> MqttPublisher:
     """Open a real MQTT connection. The only place this module imports paho-mqtt.
 
@@ -98,6 +102,9 @@ def open_mqtt_client(
     first connect needed this.
     """
 
+    if password is not None and username is None:
+        raise ValueError("password was given without a username - MQTT credentials need both")
+
     try:
         import paho.mqtt.client as mqtt  # type: ignore[import-untyped]
     except ImportError as error:
@@ -106,6 +113,8 @@ def open_mqtt_client(
             "(this module's payload-building/gating logic works and is tested without it)"
         ) from error
     client = mqtt.Client()
+    # the credentials and TLS of this service's environment (HYDRA_MQTT_*), unless the caller gave a user name explicitly
+    apply_connection_settings(client, settings_from_env(), username=username, password=password)
     connect_with_retry(
         lambda: client.connect(host, port, keepalive=keepalive_seconds),
         max_attempts=max_connect_attempts,
