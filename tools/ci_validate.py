@@ -21,7 +21,7 @@ from _readme_parity import check_readme_section_parity
 ROOT = Path(__file__).resolve().parent.parent
 REQUIRED_DOCUMENTS = (
     "README.md", "README_spa.md", "README_fra.md", "README_ita.md",
-    "README_deu.md", "README_zho.md", "README_jpn.md", "CHANGELOG.md",
+    "README_deu.md", "README_zho.md", "README_jpn.md", "README_por.md", "CHANGELOG.md",
     "LICENSE", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "SECURITY.md",
     "SUPPORT.md",
 )
