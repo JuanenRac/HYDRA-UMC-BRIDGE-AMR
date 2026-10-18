@@ -23,7 +23,7 @@ dependencies = [
 # mqtt_transport.py's own comment) so the rest of the package, including
 # every safety-relevant payload-building/gating test, works without it
 # installed.
-mqtt = ["paho-mqtt>=2.0"]
+mqtt = ["paho-mqtt>=2.1,<3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
