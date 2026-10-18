@@ -15,7 +15,7 @@ GPL-3.0-or-later - see LICENSE
 ### 🔗 Abhängigkeitsfreie Koordinationsgrenze zwischen HYDRA-UMC und AGV-/AMR-Flotten
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lizenz-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Lizenz-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Fail-Closed">
 </p>
@@ -136,7 +136,7 @@ bash build.sh
 
 ## ✅ Aktueller Status & Nächste Schritte
 
-**Heute real:** Version `0.1.2`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema mit der echten VDA-5050-Kanaltrennung order/instantActions, einem echten VDA-5050-MQTT-Publisher (`Vda5050Publisher`) sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.1.3`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema mit der echten VDA-5050-Kanaltrennung order/instantActions, einem echten VDA-5050-MQTT-Publisher (`Vda5050Publisher`) sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Navigations- oder Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 
@@ -252,4 +252,4 @@ Dieses Projekt ist Teil des HYDRA-UMC-Robotik-Ökosystems desselben Autors (Juan
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LIZENZ
-GPL-3.0 - Siehe LICENSE für Details.
+GPL-3.0-or-later - Siehe LICENSE für Details.

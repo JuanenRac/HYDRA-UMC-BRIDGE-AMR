@@ -6,6 +6,11 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.3]
+
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
+- The licence is written as GPL-3.0-or-later in every header and in the package metadata.
+
 ## [0.1.2] - Maturity lowered to functional
 - Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
 
@@ -17,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 - **Unique ids.** `actionId` and `nodeId` carry the per-run token the `orderId` already had; a restarted bridge could repeat them, and the AGV correlates its action states by `actionId`.
 - **Valid JSON.** A coordinate that overflows while being transformed, or any non-finite number, is refused instead of being sent as `Infinity` (`allow_nan=False`); `FrameTransform` accepts optional `bounds` for the area an AGV may be sent to.
 - **Headers.** `header_id` and `timestamp_iso` may be left out (`None`): the publisher counts per topic and stamps UTC with milliseconds; given ones are validated (a non-negative integer, an ISO 8601 UTC timestamp).
-- **Documentation.** The README and the guide no longer claim a name that was not on the wire, mention Bluetooth, say the VDA 5050 publisher is missing or draw a path to the server that does not exist; the emulator says what it does not check; `LICENSE` carries the full GPL-3.0 text.
+- **Documentation.** The README and the guide no longer claim a name that was not on the wire, mention Bluetooth, say the VDA 5050 publisher is missing or draw a path to the server that does not exist; the emulator says what it does not check; `LICENSE` carries the full GPL-3.0-or-later text.
 - Not run against a real AGV, fleet manager or broker. A VDA 5050 order should start at the node the AGV stands on, followed by an edge and the destination; that route (it needs the AGV's reported position and the plant graph), validation against the official JSON schemas, pause and resume actions and the dedup of repeated jobs are not built, so a real AGV is expected to refuse these single-destination-node orders. The broker's ACL must also allow this credential on the `vda5050/...` topics.
 - 25 new tests (83 in total); an unused import in the CI validator removed.
 

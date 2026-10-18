@@ -15,7 +15,7 @@ GPL-3.0-or-later - see LICENSE
 ### 🔗 Dependency-Free Coordination Boundary Between HYDRA-UMC and AGV/AMR Fleets
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Fails Closed">
 </p>
@@ -135,7 +135,7 @@ bash build.sh
 
 ## ✅ Current Status & Next Steps
 
-**Real today:** version `0.1.2`, functional as a dependency-free coordination core (`AmrCoordinator`) with a real, hand-verified coordinate-frame transform (`FrameTransform`), fail-closed phase routing, a static `plan-only` order schema with the real VDA 5050 order/instantActions channel split, a real VDA 5050 MQTT publisher (`Vda5050Publisher`), and non-mutating build-test scripts wired into CI with an SDK checkout.
+**Real today:** version `0.1.3`, functional as a dependency-free coordination core (`AmrCoordinator`) with a real, hand-verified coordinate-frame transform (`FrameTransform`), fail-closed phase routing, a static `plan-only` order schema with the real VDA 5050 order/instantActions channel split, a real VDA 5050 MQTT publisher (`Vda5050Publisher`), and non-mutating build-test scripts wired into CI with an SDK checkout.
 
 **Integration boundary:** this bridge is a coordination boundary only - it is not a navigation or motor-control node, and it cannot bypass HYDRA-UMC-SERVER, MCU limits, watchdogs or E-STOP; every dispatched job still passes through the same shared gate every sibling bridge uses.
 
@@ -251,4 +251,4 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LICENSE
-GPL-3.0 - See LICENSE for details.
+GPL-3.0-or-later - See LICENSE for details.

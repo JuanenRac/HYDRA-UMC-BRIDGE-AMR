@@ -15,7 +15,7 @@ GPL-3.0-or-later - see LICENSE
 ### 🔗 Frontera de coordinación sin dependencias entre HYDRA-UMC y flotas AGV/AMR
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/Seguridad-Fail%20Closed-red.svg" alt="Fail Closed">
 </p>
@@ -136,7 +136,7 @@ bash build.sh
 
 ## ✅ Estado actual y próximos pasos
 
-**Real hoy:** versión `0.1.2`, funcional como núcleo de coordinación sin dependencias (`AmrCoordinator`) con una transformación real de marco de coordenadas verificada a mano (`FrameTransform`), enrutado de fase con fallo cerrado, un esquema de orden estático `plan-only` con la división real de canales order/instantActions de VDA 5050, un publicador MQTT VDA 5050 real (`Vda5050Publisher`), y scripts de build-test sin mutación integrados en CI con un checkout del SDK.
+**Real hoy:** versión `0.1.3`, funcional como núcleo de coordinación sin dependencias (`AmrCoordinator`) con una transformación real de marco de coordenadas verificada a mano (`FrameTransform`), enrutado de fase con fallo cerrado, un esquema de orden estático `plan-only` con la división real de canales order/instantActions de VDA 5050, un publicador MQTT VDA 5050 real (`Vda5050Publisher`), y scripts de build-test sin mutación integrados en CI con un checkout del SDK.
 
 **Frontera de integración:** este bridge es solo una frontera de coordinación - no es un nodo de navegación ni de control de motores, y no puede saltarse HYDRA-UMC-SERVER, los límites del MCU, los watchdogs ni el E-STOP; cada trabajo despachado sigue pasando por la misma puerta compartida que usan todos los bridges hermanos.
 
@@ -252,4 +252,4 @@ Este proyecto es parte del ecosistema de robótica HYDRA-UMC del mismo autor (Ju
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LICENCIA
-GPL-3.0 - Ver LICENSE para más detalles.
+GPL-3.0-or-later - Ver LICENSE para más detalles.
