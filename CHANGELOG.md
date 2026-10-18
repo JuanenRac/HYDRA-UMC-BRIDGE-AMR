@@ -6,6 +6,9 @@ GPL-3.0-or-later - see LICENSE
 
 # Changelog
 
+## [0.1.2] - Maturity lowered to functional
+- Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
+
 ## [0.1.1] - VDA 5050 names on the wire, a client the broker accepts and an observer that listens
 
 - **The cancel reaches the AGV.** VDA 5050 action types are case-sensitive: the internal `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` now go out as `cancelOrder` / `pick` / `drop` (`AmrCoordinator.VDA_ACTION_TYPES`). Before, `CANCEL_ORDER` went out as it is, which an AGV does not recognize as a cancel, and the emulator hid it by accepting both spellings (it now accepts only the action types VDA 5050 predefines). A movement is only its destination node: `MOVE_TO_*` were never VDA 5050 action types and are no longer put on the node.

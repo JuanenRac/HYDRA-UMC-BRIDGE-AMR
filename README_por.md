@@ -131,7 +131,7 @@ bash build.sh
 
 ## ✅ Estado atual e próximos passos
 
-**Real hoje:** versão `0.1.1`, funcional como núcleo de coordenação sem dependências (`AmrCoordinator`) com uma transformação real de referenciais verificada à mão (`FrameTransform`), encaminhamento de fases com falha segura, um esquema estático de ordens `plan-only` com a divisão real de canais order/instantActions do VDA 5050, um publicador MQTT VDA 5050 real (`Vda5050Publisher`) e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
+**Real hoje:** versão `0.1.2`, funcional como núcleo de coordenação sem dependências (`AmrCoordinator`) com uma transformação real de referenciais verificada à mão (`FrameTransform`), encaminhamento de fases com falha segura, um esquema estático de ordens `plan-only` com a divisão real de canais order/instantActions do VDA 5050, um publicador MQTT VDA 5050 real (`Vda5050Publisher`) e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
 
 **Fronteira de integração:** este bridge é apenas uma fronteira de coordenação: não é um nó de navegação nem de controlo de motores e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP); cada trabalho despachado continua a passar pela mesma porta partilhada que usam todos os bridges irmãos.
 
