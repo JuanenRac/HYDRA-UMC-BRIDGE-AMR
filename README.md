@@ -26,6 +26,16 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
+## 📋 At a glance
+
+| | |
+|---|---|
+| Version | `0.1.3` |
+| Maturity | Functional |
+| Tests | 83 (`python tools/build_test.py`) |
+| Stack | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
+| On real hardware | Simulated only: tested against emulators, fakes or simulators; no run on real hardware is recorded for this version |
+
 ## 1. 🛠️ TECHNICAL OVERVIEW
 
 **HYDRA-UMC-BRIDGE-AMR** is the bidirectional, high-level coordination boundary between HYDRA-UMC and an AGV/AMR (autonomous mobile robot) fleet, reachable over Wi-Fi or a cellular (4G/5G) link. It does exactly two real things before a job reaches an AMR: resolves a factory-frame coordinate into that specific AMR's own local frame via a real, hand-checkable 2D rigid-body transform, and maps a job phase onto a minimal, VDA-5050-inspired order action. It has no navigation, localization or obstacle-avoidance logic of its own, and it cannot bypass HYDRA-UMC-SERVER, MCU limits, watchdogs or E-STOP.

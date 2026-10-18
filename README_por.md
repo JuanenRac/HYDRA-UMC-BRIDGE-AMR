@@ -24,6 +24,16 @@ GPL-3.0-or-later - see LICENSE
 
 > **Verificação de honestidade - o que realmente corre hoje:** a transformação de referenciais de coordenadas e a porta de trabalhos (o `AmrCoordinator`/`FrameTransform` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`) e a lógica de formato de mensagem/tópicos do VDA 5050 (o `Vda5050Publisher` de `mqtt_transport.py`) são reais e estão cobertas por 83 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, mais `test_vda5050_emulator.py`, que executa o bridge contra um emulador de AGV VDA 5050 escrito à mão e fiel ao protocolo, não contra um real). Nada disto foi exercitado contra um broker MQTT real, um cliente `paho-mqtt` real ou um AMR/gestor de frota físico: o próprio `FakeMqttClient` de `test_mqtt_transport.py` substitui por completo o `paho-mqtt` (nem sequer é preciso ter a biblioteca real instalada para estes testes passarem), e ainda não há comando `run` vivo porque não se escolheu nem validou nenhum transporte real de gestor de frota. Ver «Estado atual e próximos passos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora.
 
+## 📋 Num relance
+
+| | |
+|---|---|
+| Versão | `0.1.3` |
+| Maturidade | Funcional |
+| Testes | 83 (`python tools/build_test.py`) |
+| Tecnologia | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
+| Em hardware real | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
+
 ## 1. 🛠️ VISÃO TÉCNICA GERAL
 
 O **HYDRA-UMC-BRIDGE-AMR** é a fronteira de coordenação bidirecional e de alto nível entre o HYDRA-UMC e uma frota de AGV/AMR (robôs móveis autónomos), acessível por Wi-Fi ou uma ligação celular (4G/5G). Faz exatamente duas coisas reais antes de um trabalho chegar a um AMR: resolve uma coordenada do referencial da fábrica no referencial local desse AMR concreto através de uma transformação rígida 2D real e verificável à mão, e associa uma fase do trabalho a uma ação de ordem mínima inspirada no VDA 5050. Não tem lógica própria de navegação, localização nem desvio de obstáculos e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP).
