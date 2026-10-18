@@ -73,8 +73,16 @@ class Vda5050PublisherTests(unittest.TestCase):
         # regression: a real VDA 5050 nodePosition requires mapId
         # alongside x/y (github.com/VDA5050/VDA5050/blob/2.0.0/json_schemas/order.schema).
         self.assertEqual(payload["nodes"][0]["nodePosition"], {"x": 1.5, "y": 2.5, "mapId": "site-a"})
-        self.assertEqual(payload["nodes"][0]["actions"][0]["actionType"], "MOVE_TO_DESTINATION")
+        # a movement has no VDA 5050 action type: MOVE_TO_DESTINATION was never one
+        self.assertEqual(payload["nodes"][0]["actions"], [])
         self.assertEqual(payload["edges"], [])
+
+    def test_pick_and_drop_go_on_the_wire_with_the_vda_5050_action_names(self):
+        for action, wire in (("PICK_LOAD", "pick"), ("DROP_LOAD", "drop")):
+            with self.subTest(action=action):
+                client = FakeMqttClient()
+                Vda5050Publisher().publish(client, TARGET, 2, "2026-01-01T00:00:00Z", AmrDispatch(True, action, "ok"))
+                self.assertEqual(json.loads(client.published[0][1])["nodes"][0]["actions"][0]["actionType"], wire)
 
     def test_a_movement_dispatch_missing_map_id_is_refused_regression_for_amr_02(self):
         # Exercises the publisher's own defensive guard directly (a real
@@ -105,7 +113,8 @@ class Vda5050PublisherTests(unittest.TestCase):
         self.assertEqual(result.topic, "vda5050/v2/hydra-umc/amr-1/instantActions")
         payload = json.loads(client.published[0][1])
         self.assertNotIn("nodes", payload)
-        self.assertEqual(payload["actions"][0]["actionType"], "CANCEL_ORDER")
+        # VDA 5050 names it "cancelOrder", case-sensitively; an AGV refuses CANCEL_ORDER and keeps its order
+        self.assertEqual(payload["actions"][0]["actionType"], "cancelOrder")
         self.assertEqual(payload["actions"][0]["blockingType"], "HARD")
 
     def test_a_transport_failure_is_reported_not_swallowed(self):

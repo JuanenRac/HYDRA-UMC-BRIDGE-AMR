@@ -22,13 +22,13 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、58件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
+> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、83件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「現状と次のステップ」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
 
 ---
 
 ## 1. 🛠️ 技術概要
 
-**HYDRA-UMC-BRIDGE-AMR** は、HYDRA-UMCとAGV/AMR(自律走行搬送ロボット)フリートとの間の双方向・高レベルの連携境界であり、Wi-Fi、Bluetooth、またはセルラー(4G/5G)リンク経由で到達可能である。ジョブがAMRに到達する前に、実在する2つのことだけを行う —— 工場座標系上のある座標を、実在する手計算で検証可能な2D剛体変換によって、その特定のAMR自身のローカル座標系に解決すること、そしてジョブフェーズを、VDA 5050に着想を得た最小限のオーダーアクションにマッピングすることである。独自のナビゲーション、位置推定、障害物回避のロジックは持たず、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。
+**HYDRA-UMC-BRIDGE-AMR** は、HYDRA-UMCとAGV/AMR(自律走行搬送ロボット)フリートとの間の双方向・高レベルの連携境界であり、Wi-Fi、またはセルラー(4G/5G)リンク経由で到達可能である。ジョブがAMRに到達する前に、実在する2つのことだけを行う —— 工場座標系上のある座標を、実在する手計算で検証可能な2D剛体変換によって、その特定のAMR自身のローカル座標系に解決すること、そしてジョブフェーズを、VDA 5050に着想を得た最小限のオーダーアクションにマッピングすることである。独自のナビゲーション、位置推定、障害物回避のロジックは持たず、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。
 
 `HYDRA-UMC-BRIDGE-DROIDS` および `HYDRA-UMC-BRIDGE-UAV` とともに **Mobile & Autonomous Bridges** ファミリーに属し、静的な **External Automation Bridges**(CNC、LASER、OPENPNP、PRINTER3D、ROS2)と同じ `HYDRA-UMC-SDK` のジョブ・安全契約を共有している —— つまりモバイルであれ静的であれ、いずれのブリッジも独自の「作業に安全」という定義を勝手に作ることはない。
 
@@ -42,6 +42,7 @@ GPL-3.0-or-later - see LICENSE
 * ✅ **非破壊的なビルド/テスト:** `build-test.bat`/`.sh` はソースをコンパイルし、バージョンやCHANGELOGを変更せずに決定論的なユニットテストを実行する。*(実装済み、下記「ビルドと実行」を参照)*
 * 🔜 **ベンダー固有のフリートマネージャー REST/WebSocket アダプター**（VDA 5050 ネイティブではないフリートプラットフォーム向け） —— そのプラットフォームが選定・テストされた後にのみ導入される。*(計画中)*
 * ✅ **観測した機器の状態と、再起動後も重複しないオーダー ID:** `AmrCoordinator.dispatch()` は、フリートマネージャーが車両について報告した状態を受け取り、共有ゲートはジョブに書かれた `machine_state`（ブローカー上の誰でも発行できるメッセージ）の代わりにそれを使います。`Vda5050Publisher` は各オーダーの `orderId` に固有のトークンを付けるので、`headerId` を最初から数え直す再起動でも以前のオーダーの ID を再利用しません（VDA 5050 はそれを拒否します）。*（実装済み、`tests/test_observed_and_order_ids.py` でテスト済み）*
+* ✅ **ワイヤ上のVDA 5050の名前、ブローカーが受け入れるクライアント、聞き取るオブザーバー:** 内部名の `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` は、大文字小文字を区別するVDA 5050のアクションタイプ `cancelOrder` / `pick` / `drop` として送られます(以前は `CANCEL_ORDER` がそのまま送られ、AGVはキャンセルとして認識しません)。移動は目的地ノードだけで、作り出したアクションタイプは付きません。`actionId` と `nodeId` は `orderId` と同様にセッショントークンを持ちます。`header_id` と `timestamp_iso` は省略でき(パブリッシャーがトピックごとに数え、UTCの時刻を付ける)、指定された場合は検証されます。オーバーフローする座標、有限でない数値、`FrameTransform.bounds` の外の点は拒否されます(`allow_nan=False`)。`open_mqtt_client()` は `client_id`(ブローカーはそのプレフィックスで認証)を受け取り、コールバックAPI v2を使い、発行できないクライアントを返す代わりにブローカーの応答を待ちます。`Vda5050Observer` を渡すとAGVの `state` と `connection` トピックを購読し、ゲートが使う機械状態を導きます(古い、ONLINEでない、AUTOMATICモードでない場合はOFFLINE。それ以外はSAFE_STOP、FAULT、HOLDING、RUNNING、IDLE)。*(実装済み、ダブルとエミュレーターでテスト済み。実際のAGVやフリートマネージャーでは未実行で、AGVが今いるノードから始まる経路(2つのノードと1本のエッジ、工場のグラフが必要)はまだ作られないため、実際のAGVはこの単一の目的地ノードの指示を拒否します)*
 
 ---
 
@@ -49,11 +50,11 @@ GPL-3.0-or-later - see LICENSE
 
 ```mermaid
 flowchart LR
-    AMR["AGV / AMRフリート<br/>(Wi-Fi / BT / 4G-5G)"] -- "オーダーアクション" --> BRIDGE["BRIDGE-AMR<br/>AmrCoordinator.dispatch()"]
+    BRIDGE["BRIDGE-AMR<br/>AmrCoordinator.dispatch()"] -- "VDA 5050 (MQTT)" --> AMR["AGV / AMRフリート<br/>(Wi-Fi / 4G-5G)"]
+    AMR -- "state / connection" --> BRIDGE
     BRIDGE -- "FrameTransform" --> LOCAL["AMRローカル x/y"]
     BRIDGE -- BridgeJob --> SDK["HYDRA-UMC-SDK<br/>evaluate_job()"]
-    SDK -- GateDecision --> SERVER["HYDRA-UMC-SERVER"]
-    SERVER -- "ジョブ / 中止" --> MCU["MCU安全"]
+    SDK -- GateDecision --> BRIDGE
 ```
 
 ---
@@ -64,7 +65,7 @@ flowchart LR
 * **なぜオーダーアクション語彙はVDA 5050に沿って形作られているのか。** VDA 5050は、複数の商用AMRフリート(および増加しつつあるオープンソーススタック)がすでに話している、実在するオープンでベンダー中立なフリート連携標準である —— 本リポジトリ自身のアクションをその実在する語彙(`CANCEL_ORDER`、ノード/アクション形式の移動)にちなんで命名することで、将来の実在するVDA 5050アダプターは、後から取り付けられた変換レイヤーではなく、自然な適合となる。
 * **なぜ `AmrCoordinator.dispatch()` はそれでも共有の `evaluate_job()` ゲートを通してすべてのジョブを流すのか。** AMRは、CNC、LASER、OPENPNP、PRINTER3D、ROS2、DROIDSが使うのと同じ `bridge_contract` の単なる別のクライアントに過ぎない —— 他のすべてのブリッジやHYDRA-UMC-SERVERが強制するIDLE/READYロジックを特別に迂回することはない。
 * **なぜ `CANCEL_ORDER` は故障中でも要求可能なままなのか。** ゲートの生産フェーズ要件(`IDLE` + `READY`)は、中止リクエストには意図的に同じ方法で適用されない —— オペレーターは、故障の最中であっても、AMRの現在のオーダーを常にキャンセルできなければならない。
-* **なぜフリートマネージャー・トランスポートアダプターがまだこのリポジトリにないのか。** 特定のAMRの実際のREST/WebSocketプロトコル(あるいは完全なVDA 5050 MQTTクライアント)に、実際のフリートが選定・テストされる前にコミットすることは、この依存関係のないローカルコアが検証できない前提を組み込むリスクを伴う。
+* **なぜベンダー固有のフリートマネージャー用アダプターがまだこのリポジトリにないのか。**(VDA 5050 MQTTパブリッシャーは上記のとおり存在する。) 特定のAMRの実際のREST/WebSocketプロトコルに、実際のフリートが選定・テストされる前にコミットすることは、この依存関係のないローカルコアが検証できない前提を組み込むリスクを伴う。
 * **エコシステムの他部分とどう関係するか。** BRIDGE-AMRは実際のAMRフリートと `HYDRA-UMC-SDK` → `HYDRA-UMC-SERVER` → MCU安全との間に位置する —— 連携境界であり、ナビゲーションノードでもモーター制御ノードでも決してなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。
 
 ---
@@ -78,6 +79,7 @@ HYDRA-UMC-BRIDGE-AMR/
 │       ├── __init__.py
 │       ├── coordinator.py       # AmrCoordinator + FrameTransform: 依存関係なしのオーダーゲート
 │       ├── mqtt_transport.py    # 実際のVDA 5050 MQTT publish - order/instantActions、検証済みdispatchのみ
+│       ├── observer.py         # AGVがstate/connectionで報告する内容を、ゲート用の機械状態にする
 │       └── simulated_amr.py     # 明示的なオーダー状態テーブル + シミュレートAMR:トランスポートなし、実動作なし
 ├── tests/
 │   ├── test_coordinator.py      # 決定論的ユニットテスト(手計算で検証可能な幾何学を含む)
@@ -85,6 +87,7 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_mqtt_environment.py # サービス環境の MQTT 認証情報と TLS がクライアントに届く
 │   ├── test_simulated_amr.py    # 状態テーブルとシミュレートAMRのテスト
 │   ├── test_observed_and_order_ids.py # 観測した機器の状態と、再起動後も重複しないオーダー ID
+│   ├── test_hardening.py        # クライアントID、ブローカーの応答、オブザーバー、ワイヤ上の名前、ヘッダーID、有限なJSON
 │   ├── vda5050_emulator.py      # プロトコル忠実な VDA 5050 AGV エミュレータ（現実的なテストダブル）
 │   └── test_vda5050_emulator.py # VDA 5050 AGV エミュレータに対する bridge の振る舞い
 ├── tools/
@@ -124,13 +127,13 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(`test_coordinator.py`、`test_mqtt_transport.py`、`test_vda5050_emulator.py` - 58件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
+`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(すべての `test_*.py` - 83件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
 
 ---
 
 ## ✅ 現状と次のステップ
 
-**現時点で実在するもの:** バージョン `0.1.0`。実在する手検証済みの座標系変換(`FrameTransform`)、フェイルクローズのフェーズルーティング、VDA 5050 の実際の order/instantActions チャネル分割を備えた静的な `plan-only` オーダースキーマ、実際の VDA 5050 MQTT パブリッシャー(`Vda5050Publisher`)、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`AmrCoordinator`)として機能している。
+**現時点で実在するもの:** バージョン `0.1.1`。実在する手検証済みの座標系変換(`FrameTransform`)、フェイルクローズのフェーズルーティング、VDA 5050 の実際の order/instantActions チャネル分割を備えた静的な `plan-only` オーダースキーマ、実際の VDA 5050 MQTT パブリッシャー(`Vda5050Publisher`)、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`AmrCoordinator`)として機能している。
 
 **統合境界:** このブリッジは連携境界に過ぎない —— ナビゲーションノードでもモーター制御ノードでもなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。送信されるすべてのジョブは、依然としてすべての兄弟ブリッジが使う同じ共有ゲートを通過する。
 

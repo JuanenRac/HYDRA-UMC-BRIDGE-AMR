@@ -46,12 +46,21 @@ class FrameTransform:
     # come from that AMR's own validated site-survey/fleet profile, never
     # invented here just to fill the field.
     map_id: str
+    # The factory-frame area the AMR may be sent to, (min_x, max_x, min_y, max_y)
+    # in the same units as x/y. None means no limit is configured: a site sets its
+    # own (the AMR's navigable area), nothing here guesses one.
+    bounds: tuple[float, float, float, float] | None = None
 
     def __post_init__(self) -> None:
         if not all(math.isfinite(value) for value in (self.origin_x, self.origin_y, self.heading_rad)):
             raise ValueError("FrameTransform origin and heading must be finite")
         if not self.map_id:
             raise ValueError("FrameTransform.map_id must be a real, non-empty map identity")
+        if self.bounds is not None:
+            if len(self.bounds) != 4 or not all(math.isfinite(value) for value in self.bounds):
+                raise ValueError("FrameTransform.bounds must be four finite numbers (min_x, max_x, min_y, max_y)")
+            if self.bounds[0] >= self.bounds[1] or self.bounds[2] >= self.bounds[3]:
+                raise ValueError("FrameTransform.bounds must have min < max on both axes")
 
     @staticmethod
     def _require_finite_point(x: float, y: float) -> None:
@@ -62,9 +71,15 @@ class FrameTransform:
         """Factory-frame (x, y) -> this AMR's own local-frame (x, y)."""
 
         self._require_finite_point(x, y)
+        if self.bounds is not None and not (self.bounds[0] <= x <= self.bounds[1] and self.bounds[2] <= y <= self.bounds[3]):
+            raise ValueError(f"point ({x}, {y}) is outside the configured area {self.bounds}")
         dx, dy = x - self.origin_x, y - self.origin_y
         cos_h, sin_h = math.cos(self.heading_rad), math.sin(self.heading_rad)
-        return dx * cos_h + dy * sin_h, -dx * sin_h + dy * cos_h
+        local_x, local_y = dx * cos_h + dy * sin_h, -dx * sin_h + dy * cos_h
+        # Two finite numbers can still overflow when subtracted (1e308 - -1e308): the result is what is sent.
+        if not (math.isfinite(local_x) and math.isfinite(local_y)):
+            raise ValueError("the AMR-local coordinate is not finite")
+        return local_x, local_y
 
     def to_factory(self, x: float, y: float) -> tuple[float, float]:
         """This AMR's own local-frame (x, y) -> factory-frame (x, y) - the real inverse of `to_local`."""
@@ -131,7 +146,14 @@ class AmrCoordinator:
     MOVE_TO_DESTINATION = "MOVE_TO_DESTINATION"
     DROP_LOAD = "DROP_LOAD"
     MOVE_TO_HOME = "MOVE_TO_HOME"
-    CANCEL_ORDER = "CANCEL_ORDER"  # matches VDA 5050's own real "cancelOrder" action name
+    CANCEL_ORDER = "CANCEL_ORDER"  # the internal name of VDA 5050's "cancelOrder" instant action
+
+    # What each action is called on the wire. VDA 5050 action types are
+    # case-sensitive camelCase words and only a few exist: pick, drop and
+    # cancelOrder are the ones used here. The movement actions have no action
+    # type at all - a VDA 5050 AGV moves along the nodes and edges of an order,
+    # so the destination node carries no invented action.
+    VDA_ACTION_TYPES = {PICK_LOAD: "pick", DROP_LOAD: "drop", CANCEL_ORDER: "cancelOrder"}
 
     _MOVEMENT_ACTIONS = {MOVE_TO_STAGING, MOVE_TO_DESTINATION, MOVE_TO_HOME}
 

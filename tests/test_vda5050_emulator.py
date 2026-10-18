@@ -56,11 +56,29 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
         self.assertEqual(self.agv.order_id, body["orderId"])
         state = self.agv.emit_state()
         self.assertEqual(state["orderId"], body["orderId"])
-        self.assertEqual(state["actionStates"][0]["actionType"], "MOVE_TO_DESTINATION")
-        self.assertEqual(state["actionStates"][0]["actionStatus"], "WAITING")
+        # a movement is the destination node itself: no action, no invented action type
+        self.assertEqual(state["actionStates"], [])
+        self.assertEqual([node["nodeId"] for node in state["nodeStates"]], [body["nodes"][0]["nodeId"]])
+
+    def test_the_agv_drives_to_the_destination_node_and_reports_it_as_reached(self) -> None:
+        self._dispatch_and_publish(JobPhase.PROCESS, 1, x=1.0, y=1.0)
+        destination = self.agv.received[0][1]["nodes"][0]["nodeId"]
+        self.agv.step()
+        self.assertTrue(self.agv.emit_state()["driving"])
+        self.agv.step()
+        state = self.agv.emit_state()
+        self.assertEqual((state["driving"], state["lastNodeId"], state["nodeStates"]), (False, destination, []))
+
+    def test_the_old_upper_case_cancel_name_is_not_a_vda_5050_action_and_is_refused(self) -> None:
+        import json
+
+        body = {"headerId": 1, "timestamp": "2026-01-01T00:00:00Z", "version": "2.0.0", "manufacturer": "hydra-umc", "serialNumber": "amr-1",
+                "actions": [{"actionId": "a", "actionType": "CANCEL_ORDER", "blockingType": "HARD"}]}
+        with self.assertRaises(Vda5050ValidationError):
+            self.agv.publish(TARGET.topic("instantActions"), json.dumps(body))
 
     def test_the_agv_executes_the_order_action_waiting_running_finished(self) -> None:
-        self._dispatch_and_publish(JobPhase.PROCESS, 1, x=1.0, y=1.0)
+        self._dispatch_and_publish(JobPhase.LOAD, 1)
         self.assertEqual(self.agv.action_states[0]["actionStatus"], "WAITING")
         self.agv.step()
         self.assertEqual(self.agv.action_states[0]["actionStatus"], "RUNNING")
@@ -70,7 +88,7 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
         self.assertFalse(self.agv.emit_state()["driving"])
 
     def test_cancel_order_on_the_instant_actions_topic_preempts_a_running_order(self) -> None:
-        self._dispatch_and_publish(JobPhase.PROCESS, 1, x=1.0, y=1.0)
+        self._dispatch_and_publish(JobPhase.LOAD, 1)
         self.agv.step()  # action now RUNNING
         self.assertEqual(self.agv.action_states[0]["actionStatus"], "RUNNING")
 
@@ -100,10 +118,10 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
         self.assertTrue(result.published, result.reason)
         _channel, body = self.agv.received[0]
         self.assertNotIn("nodePosition", body["nodes"][0])
-        self.assertEqual(self.agv.action_states[0]["actionType"], "PICK_LOAD")
+        self.assertEqual(self.agv.action_states[0]["actionType"], "pick")
 
     def test_an_emulated_estop_surfaces_in_the_state_safety_block_and_halts_execution(self) -> None:
-        self._dispatch_and_publish(JobPhase.PROCESS, 1, x=1.0, y=1.0)
+        self._dispatch_and_publish(JobPhase.LOAD, 1)
         self.agv.step()  # RUNNING
         self.agv.set_estop("MANUAL")
         state = self.agv.emit_state()
@@ -115,7 +133,7 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
         self.assertEqual(self.agv.action_states[0]["actionStatus"], "FAILED")
 
     def test_a_field_violation_stops_driving_and_a_non_automatic_mode_pauses_execution(self) -> None:
-        self._dispatch_and_publish(JobPhase.PROCESS, 1, x=1.0, y=1.0)
+        self._dispatch_and_publish(JobPhase.LOAD, 1)
         self.agv.set_operating_mode("MANUAL")
         self.agv.step()  # no-op: not AUTOMATIC
         self.assertEqual(self.agv.action_states[0]["actionStatus"], "WAITING")

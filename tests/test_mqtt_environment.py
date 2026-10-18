@@ -14,10 +14,16 @@ class FakeClient:
     instances = []
 
     def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
         self.credentials = None
         self.tls = None
         self.connected_to = None
+        self.on_connect = None
         FakeClient.instances.append(self)
+
+    def reconnect_delay_set(self, *args, **kwargs):
+        pass
 
     def username_pw_set(self, username, password=None):
         self.credentials = (username, password)
@@ -35,6 +41,11 @@ class FakeClient:
         return None
 
     def loop_start(self):
+        # the broker accepts the connection
+        if self.on_connect is not None:
+            self.on_connect(self, None, None, types.SimpleNamespace(is_failure=False))
+
+    def loop_stop(self):
         return None
 
     def publish(self, *args, **kwargs):
@@ -46,6 +57,7 @@ def fake_paho():
     mqtt_package = types.ModuleType("paho.mqtt")
     client_module = types.ModuleType("paho.mqtt.client")
     client_module.Client = FakeClient
+    client_module.CallbackAPIVersion = types.SimpleNamespace(VERSION2=2)
     paho.mqtt = mqtt_package
     mqtt_package.client = client_module
     return {"paho": paho, "paho.mqtt": mqtt_package, "paho.mqtt.client": client_module}

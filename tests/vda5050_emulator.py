@@ -3,7 +3,7 @@
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0-or-later - see LICENSE
 # =============================================================================
-"""A protocol-faithful VDA 5050 2.0.0 AGV on the MQTT bus, over the exact
+"""A VDA 5050 2.0.0 AGV on the MQTT bus (shape-level, not a conformance test), over the exact
 ``MqttPublisher`` seam (`publish(topic, payload)`) this bridge's
 ``Vda5050Publisher`` already talks to.
 
@@ -28,11 +28,21 @@ This emulator, on every `publish()`:
     `actionId`, `actionType`, and a `blockingType` in
     {NONE,SOFT,SINGLE,HARD}; for `instantActions` - a non-empty `actions`
     list of the same action shape;
+  * accepts only the action types VDA 5050 2.0.0 predefines (`pick`,
+    `drop`, `cancelOrder`, ...; they are case-sensitive, so `CANCEL_ORDER` is
+    refused);
   * then actually executes it: an accepted order becomes the active
-    order, its single node action goes WAITING -> RUNNING on `step()` ->
-    FINISHED; a `CANCEL_ORDER` instant action preempts the active order
-    (its running action -> FAILED, `driving` -> False), exactly as a real
-    AGV handles `cancelOrder` on the instantActions topic.
+    order, a destination node without actions is driven to (`driving`, then
+    `lastNodeId`), its node action goes WAITING -> RUNNING on `step()` ->
+    FINISHED; a `cancelOrder` instant action preempts the active order
+    (its running action -> FAILED, `driving` -> False), as a real AGV
+    handles it on the instantActions topic.
+
+What it does NOT check, so a message it accepts is still not proven valid for a
+real AGV: that the first node of an order is the node the AGV stands on, that
+sequence ids and edges are consistent, that the node ids exist in the AGV's
+map, or any vendor extension. Validate against the official JSON schemas
+(github.com/VDA5050/VDA5050) before a real vehicle is involved.
 
 `emit_state()` returns a real VDA 5050 `state` message. `set_estop()`,
 `set_field_violation()` and `set_operating_mode()` drive the physical
@@ -46,6 +56,11 @@ import json
 import time
 
 _BLOCKING_TYPES = {"NONE", "SOFT", "SINGLE", "HARD"}
+# the actions VDA 5050 2.0.0 predefines
+_ACTION_TYPES = {
+    "startPause", "stopPause", "startCharging", "stopCharging", "initPosition", "stateRequest", "logReport",
+    "pick", "drop", "detectObject", "finePositioning", "waitForTrigger", "cancelOrder", "factsheetRequest",
+}
 _OPERATING_MODES = {"AUTOMATIC", "SEMIAUTOMATIC", "MANUAL", "SERVICE", "TEACHIN"}
 
 
@@ -67,6 +82,7 @@ class Vda5050AgvEmulator:
         self.last_node_id: str = ""
         self.action_states: list[dict] = []  # {actionId, actionType, actionStatus}
         self.driving: bool = False
+        self._moving_to: str | None = None
         self.paused: bool = False
         self.operating_mode: str = "AUTOMATIC"
         self.battery_charge: float = 87.0
@@ -99,6 +115,12 @@ class Vda5050AgvEmulator:
     def step(self) -> None:
         """Advance action execution one tick: WAITING -> RUNNING -> FINISHED."""
         if self.e_stop != "NONE" or self.field_violation or self.operating_mode != "AUTOMATIC":
+            return
+        if self._moving_to is not None:
+            if not self.driving:
+                self.driving = True
+            else:
+                self.last_node_id, self._moving_to, self.driving = self._moving_to, None, False
             return
         for action in self.action_states:
             if action["actionStatus"] == "WAITING":
@@ -172,6 +194,8 @@ class Vda5050AgvEmulator:
             raise Vda5050ValidationError(
                 f"{where}: blockingType {action['blockingType']!r} not in {sorted(_BLOCKING_TYPES)}"
             )
+        if action["actionType"] not in _ACTION_TYPES:
+            raise Vda5050ValidationError(f"{where}: actionType {action['actionType']!r} is not a VDA 5050 2.0.0 action type")
 
     def _validate_order(self, body: dict) -> None:
         for field in ("orderId", "orderUpdateId", "nodes", "edges"):
@@ -211,18 +235,22 @@ class Vda5050AgvEmulator:
         self.order_id = body["orderId"]
         self.order_update_id = body["orderUpdateId"]
         node = body["nodes"][0]
-        self.last_node_id = node["nodeId"]
         self.action_states = [
             {"actionId": a["actionId"], "actionType": a["actionType"], "actionStatus": "WAITING"}
             for a in node["actions"]
         ]
         self.driving = False
+        # a node without actions is somewhere to drive to; one with actions is where the AGV works
+        self._moving_to = node["nodeId"] if not node["actions"] else None
+        if node["actions"]:
+            self.last_node_id = node["nodeId"]
 
     def _apply_instant_actions(self, body: dict) -> None:
         for action in body["actions"]:
-            if action["actionType"] in ("CANCEL_ORDER", "cancelOrder"):
+            if action["actionType"] == "cancelOrder":
                 self._fail_running_actions("order cancelled")
                 self.order_id = ""
+                self._moving_to = None
                 self.driving = False
             elif action["actionType"] in ("startPause",):
                 self.paused = True
@@ -248,7 +276,7 @@ class Vda5050AgvEmulator:
             "orderUpdateId": self.order_update_id,
             "lastNodeId": self.last_node_id,
             "lastNodeSequenceId": 0,
-            "nodeStates": [],
+            "nodeStates": [{"nodeId": self._moving_to, "sequenceId": 0, "released": True}] if self._moving_to else [],
             "edgeStates": [],
             "driving": self.driving,
             "paused": self.paused,

@@ -22,13 +22,13 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **Ehrlichkeitscheck - was heute wirklich läuft:** die Koordinatenrahmen-Transformation und das Job-Gate (`coordinator.py` mit `AmrCoordinator`/`FrameTransform`, das jeden Dispatch durch das echte `evaluate_job()` von `HYDRA-UMC-SDK` leitet) sowie die VDA-5050-Nachrichtenform-/Topic-Logik (`mqtt_transport.py` mit `Vda5050Publisher`) sind real und durch 58 bestehende Unit-Tests abgedeckt (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, plus `test_vda5050_emulator.py`, das die Bridge gegen einen protokolltreuen, von Hand geschriebenen VDA-5050-AGV-Emulator laufen lässt, keinen echten im Produktionsbetrieb). Nichts davon wurde gegen einen echten MQTT-Broker, einen echten `paho-mqtt`-Client oder einen physischen AMR/Flottenmanager getestet - `test_mqtt_transport.py`s eigener `FakeMqttClient` ersetzt `paho-mqtt` vollständig (die echte Bibliothek muss für das Bestehen dieser Tests nicht einmal installiert sein), und es gibt noch keinen echten `run`-Befehl, weil noch kein reales Flottenmanager-Transportprotokoll ausgewählt oder validiert wurde. Siehe „Aktueller Status & Nächste Schritte" weiter unten, das dies bereits klar sagt, sowie `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
+> **Ehrlichkeitscheck - was heute wirklich läuft:** die Koordinatenrahmen-Transformation und das Job-Gate (`coordinator.py` mit `AmrCoordinator`/`FrameTransform`, das jeden Dispatch durch das echte `evaluate_job()` von `HYDRA-UMC-SDK` leitet) sowie die VDA-5050-Nachrichtenform-/Topic-Logik (`mqtt_transport.py` mit `Vda5050Publisher`) sind real und durch 83 bestehende Unit-Tests abgedeckt (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, plus `test_vda5050_emulator.py`, das die Bridge gegen einen protokolltreuen, von Hand geschriebenen VDA-5050-AGV-Emulator laufen lässt, keinen echten im Produktionsbetrieb). Nichts davon wurde gegen einen echten MQTT-Broker, einen echten `paho-mqtt`-Client oder einen physischen AMR/Flottenmanager getestet - `test_mqtt_transport.py`s eigener `FakeMqttClient` ersetzt `paho-mqtt` vollständig (die echte Bibliothek muss für das Bestehen dieser Tests nicht einmal installiert sein), und es gibt noch keinen echten `run`-Befehl, weil noch kein reales Flottenmanager-Transportprotokoll ausgewählt oder validiert wurde. Siehe „Aktueller Status & Nächste Schritte" weiter unten, das dies bereits klar sagt, sowie `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
 
 ---
 
 ## 1. 🛠️ TECHNISCHER ÜBERBLICK
 
-**HYDRA-UMC-BRIDGE-AMR** ist die bidirektionale, High-Level-Koordinationsgrenze zwischen HYDRA-UMC und einer AGV-/AMR-Flotte (autonomer mobiler Roboter), erreichbar über Wi-Fi, Bluetooth oder eine Mobilfunkverbindung (4G/5G). Sie tut genau zwei echte Dinge, bevor ein Auftrag einen AMR erreicht: Sie löst eine Koordinate aus dem Fabrik-Koordinatensystem mittels einer echten, von Hand nachprüfbaren 2D-Starrkörpertransformation in das eigene lokale Koordinatensystem dieses spezifischen AMR auf und bildet eine Auftragsphase auf eine minimale, an VDA 5050 angelehnte Order-Aktion ab. Sie hat keine eigene Navigations-, Lokalisierungs- oder Hindernisvermeidungslogik und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen.
+**HYDRA-UMC-BRIDGE-AMR** ist die bidirektionale, High-Level-Koordinationsgrenze zwischen HYDRA-UMC und einer AGV-/AMR-Flotte (autonomer mobiler Roboter), erreichbar über Wi-Fi oder eine Mobilfunkverbindung (4G/5G). Sie tut genau zwei echte Dinge, bevor ein Auftrag einen AMR erreicht: Sie löst eine Koordinate aus dem Fabrik-Koordinatensystem mittels einer echten, von Hand nachprüfbaren 2D-Starrkörpertransformation in das eigene lokale Koordinatensystem dieses spezifischen AMR auf und bildet eine Auftragsphase auf eine minimale, an VDA 5050 angelehnte Order-Aktion ab. Sie hat keine eigene Navigations-, Lokalisierungs- oder Hindernisvermeidungslogik und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen.
 
 Sie gehört zur Familie **Mobile & Autonomous Bridges** neben `HYDRA-UMC-BRIDGE-DROIDS` und `HYDRA-UMC-BRIDGE-UAV` und teilt denselben `HYDRA-UMC-SDK`-Auftrags- und Sicherheitsvertrag wie die stationären **External Automation Bridges** (CNC, LASER, OPENPNP, PRINTER3D, ROS2) — sodass keine Brücke, ob mobil oder stationär, ihre eigene Definition von "sicher zum Arbeiten" erfindet.
 
@@ -42,6 +42,7 @@ Sie gehört zur Familie **Mobile & Autonomous Bridges** neben `HYDRA-UMC-BRIDGE-
 * ✅ **Nicht-mutierender Build/Test:** `build-test.bat`/`.sh` kompilieren den Quellcode und führen deterministische Unit-Tests aus, ohne Version oder CHANGELOG zu ändern. *(implementiert, siehe BUILD & AUSFÜHRUNG unten)*
 * 🔜 **Herstellerspezifischer REST-/WebSocket-Adapter für Flottenmanager** (für eine Flottenplattform, die nicht VDA-5050-nativ ist) — wird erst eingeführt, nachdem diese Plattform ausgewählt und getestet wurde. *(geplant)*
 * ✅ **Beobachteter Maschinenzustand und Auftrags-IDs, die einen Neustart überstehen:** `AmrCoordinator.dispatch()` nimmt den Zustand an, den der Flottenmanager für das Fahrzeug gemeldet hat und den das gemeinsame Tor statt des im Auftrag stehenden `machine_state` verwendet (eine Nachricht, die jeder am Broker veröffentlichen kann); `Vda5050Publisher` gibt jedem Auftrag eine `orderId` mit eigenem Token, damit ein Neustart, der `headerId` wieder von vorn zählt, die ID eines früheren Auftrags nicht wiederverwendet (VDA 5050 lehnt das ab). *(implementiert, getestet in `tests/test_observed_and_order_ids.py`)*
+* ✅ **VDA-5050-Namen auf dem Draht, ein Client, den der Broker akzeptiert, und ein Beobachter, der zuhört:** die internen `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` gehen als die groß-/kleinschreibungsabhängigen VDA-5050-Aktionstypen `cancelOrder` / `pick` / `drop` hinaus (zuvor ging `CANCEL_ORDER` unverändert hinaus, was ein AGV nicht als Abbruch erkennt), und eine Fahrt besteht nur aus ihrem Zielknoten, ohne erfundenen Aktionstyp; `actionId` und `nodeId` tragen wie die `orderId` das Sitzungs-Token; `header_id` und `timestamp_iso` können entfallen (der Publisher zählt pro Topic und setzt die UTC-Zeit) und werden geprüft, wenn sie angegeben sind; eine überlaufende Koordinate, eine nicht endliche Zahl oder ein Punkt außerhalb von `FrameTransform.bounds` wird abgelehnt (`allow_nan=False`). `open_mqtt_client()` nimmt eine `client_id` (der Broker authentifiziert über deren Präfix), nutzt die Callback-API v2 und wartet auf die Antwort des Brokers, statt einen Client zurückzugeben, der nicht veröffentlichen kann; mit einem `Vda5050Observer` abonniert er die Topics `state` und `connection` des AGV und leitet daraus den vom Gate verwendeten Maschinenzustand ab (OFFLINE bei veraltet, nicht ONLINE oder nicht im Modus AUTOMATIC; sonst SAFE_STOP, FAULT, HOLDING, RUNNING oder IDLE). *(implementiert, mit Attrappen und dem Emulator getestet; nie gegen ein echtes AGV oder einen echten Flottenmanager ausgeführt, und eine Route, die am Knoten des AGV beginnt (zwei Knoten und eine Kante, wofür der Anlagengraph nötig ist), wird noch NICHT gebaut, ein echtes AGV wird diese Aufträge mit nur einem Zielknoten also ablehnen)*
 
 ---
 
@@ -49,11 +50,11 @@ Sie gehört zur Familie **Mobile & Autonomous Bridges** neben `HYDRA-UMC-BRIDGE-
 
 ```mermaid
 flowchart LR
-    AMR["AGV-/AMR-Flotte<br/>(Wi-Fi / BT / 4G-5G)"] -- "Order-Aktion" --> BRIDGE["BRIDGE-AMR<br/>AmrCoordinator.dispatch()"]
+    BRIDGE["BRIDGE-AMR<br/>AmrCoordinator.dispatch()"] -- "VDA 5050 (MQTT)" --> AMR["AGV-/AMR-Flotte<br/>(Wi-Fi / 4G-5G)"]
+    AMR -- "state / connection" --> BRIDGE
     BRIDGE -- "FrameTransform" --> LOCAL["AMR-lokale x/y"]
     BRIDGE -- BridgeJob --> SDK["HYDRA-UMC-SDK<br/>evaluate_job()"]
-    SDK -- GateDecision --> SERVER["HYDRA-UMC-SERVER"]
-    SERVER -- "Auftrag / Abbruch" --> MCU["MCU-Sicherheit"]
+    SDK -- GateDecision --> BRIDGE
 ```
 
 ---
@@ -64,7 +65,7 @@ flowchart LR
 * **Warum das Order-Aktions-Vokabular an VDA 5050 angelehnt ist.** VDA 5050 ist der echte, offene, herstellerneutrale Standard für Flottenintegration, den mehrere kommerzielle AMR-Flotten (und eine wachsende Zahl von Open-Source-Stacks) bereits sprechen — die eigenen Aktionen dieses Repos nach seinem echten Vokabular zu benennen (`CANCEL_ORDER`, knoten-/aktionsförmige Bewegung) bedeutet, dass ein künftiger echter VDA-5050-Adapter natürlich passt statt als nachträglich angeflanschte Übersetzungsschicht.
 * **Warum `AmrCoordinator.dispatch()` trotzdem jeden Auftrag durch das gemeinsame `evaluate_job()`-Gatter leitet.** Ein AMR ist nur ein weiterer Client desselben `bridge_contract`, den CNC, LASER, OPENPNP, PRINTER3D, ROS2 und DROIDS verwenden — er erhält keine besondere Umgehung der IDLE/READY-Logik, die jede andere Brücke und HYDRA-UMC-SERVER durchsetzen.
 * **Warum `CANCEL_ORDER` während eines Fehlers anforderbar bleibt.** Die Anforderung der produktiven Phase des Gatters (`IDLE` + `READY`) wird bewusst nicht in derselben Weise auf eine Abbruchanfrage angewendet — ein Bediener muss immer den aktuellen Auftrag eines AMR abbrechen können, selbst mitten in einem Fehler.
-* **Warum der Transportadapter für den Flottenmanager noch nicht in diesem Repository ist.** Sich vor der Auswahl und dem Test einer echten Flotte auf das echte REST-/WebSocket-Protokoll eines bestimmten AMR (oder einen vollständigen VDA-5050-MQTT-Client) festzulegen, würde riskieren, Annahmen einzubauen, die dieser lokale, abhängigkeitsfreie Kern nicht verifizieren kann.
+* **Warum es in diesem Repository noch keinen herstellerspezifischen Flottenmanager-Adapter gibt.** (Der VDA-5050-MQTT-Publisher existiert, siehe oben.) Sich vor der Auswahl und dem Test einer echten Flotte auf das echte REST-/WebSocket-Protokoll eines bestimmten AMR festzulegen, würde riskieren, Annahmen einzubauen, die dieser lokale, abhängigkeitsfreie Kern nicht verifizieren kann.
 * **Wie das in den Rest des Ökosystems passt.** BRIDGE-AMR sitzt zwischen einer echten AMR-Flotte und `HYDRA-UMC-SDK` → `HYDRA-UMC-SERVER` → MCU-Sicherheit — es ist eine Koordinationsgrenze, niemals ein Navigations- oder Motorsteuerungsknoten, und es kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen.
 
 ---
@@ -78,6 +79,7 @@ HYDRA-UMC-BRIDGE-AMR/
 │       ├── __init__.py
 │       ├── coordinator.py       # AmrCoordinator + FrameTransform: abhängigkeitsfreies Order-Gatter
 │       ├── mqtt_transport.py    # Echter VDA-5050-MQTT-Publish - order/instantActions, nur bereits validierter Dispatch
+│       ├── observer.py         # Was das AGV auf state/connection meldet, als Maschinenzustand für das Gate
 │       └── simulated_amr.py     # Explizite Order-Zustandstabelle + simulierter AMR: kein Transport, keine echte Bewegung
 ├── tests/
 │   ├── test_coordinator.py      # Deterministische Unit-Tests, inkl. von Hand nachprüfbarer Geometrie
@@ -85,6 +87,7 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_mqtt_environment.py # Die MQTT-Zugangsdaten und TLS der Dienstumgebung erreichen den Client
 │   ├── test_simulated_amr.py    # Tests der Zustandstabelle und des simulierten AMR
 │   ├── test_observed_and_order_ids.py # Beobachteter Maschinenzustand und Auftrags-IDs, die einen Neustart überstehen
+│   ├── test_hardening.py        # Client-ID, Broker-Antwort, Beobachter, Namen auf dem Draht, Header-IDs, endliches JSON
 │   ├── vda5050_emulator.py      # Protokolltreuer VDA 5050 AGV-Emulator (realistischer Test-Double)
 │   └── test_vda5050_emulator.py # Bridge-Verhalten gegenüber dem VDA 5050 AGV-Emulator
 ├── tools/
@@ -127,13 +130,13 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` kompiliert jedes Modul unter `src/` mit `py_compile` und führt die vollständige, unter `tests/` entdeckte `unittest`-Suite aus (`test_coordinator.py`, `test_mqtt_transport.py`, `test_vda5050_emulator.py` - 58 Tests) — deterministisch, ohne echte AMR-Verbindung, ohne Netzwerk und ohne Versions-/CHANGELOG-Änderung. `build` führt zuerst dieselbe Validierung aus und ruft nur bei Erfolg `tools/bump_version.py` auf, um die Version in `pyproject.toml`, `hydra-umc.project.json` und `CHANGELOG.md` zu synchronisieren. Es gibt noch keinen echten Hardware-`run`-Befehl — dafür sind ein validierter Transportadapter für den Flottenmanager und eine echte AMR-Flotte erforderlich.
+`build-test` kompiliert jedes Modul unter `src/` mit `py_compile` und führt die vollständige, unter `tests/` entdeckte `unittest`-Suite aus (jede Datei `test_*.py` - 83 Tests) — deterministisch, ohne echte AMR-Verbindung, ohne Netzwerk und ohne Versions-/CHANGELOG-Änderung. `build` führt zuerst dieselbe Validierung aus und ruft nur bei Erfolg `tools/bump_version.py` auf, um die Version in `pyproject.toml`, `hydra-umc.project.json` und `CHANGELOG.md` zu synchronisieren. Es gibt noch keinen echten Hardware-`run`-Befehl — dafür sind ein validierter Transportadapter für den Flottenmanager und eine echte AMR-Flotte erforderlich.
 
 ---
 
 ## ✅ Aktueller Status & Nächste Schritte
 
-**Heute real:** Version `0.1.0`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema mit der echten VDA-5050-Kanaltrennung order/instantActions, einem echten VDA-5050-MQTT-Publisher (`Vda5050Publisher`) sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
+**Heute real:** Version `0.1.1`, funktionsfähig als abhängigkeitsfreier Koordinationskern (`AmrCoordinator`) mit einer echten, von Hand verifizierten Koordinatensystem-Transformation (`FrameTransform`), ausfallsicherem Phasenrouting, einem statischen `plan-only`-Order-Schema mit der echten VDA-5050-Kanaltrennung order/instantActions, einem echten VDA-5050-MQTT-Publisher (`Vda5050Publisher`) sowie nicht-mutierenden Build-Test-Skripten, die in CI mit SDK-Checkout eingebunden sind.
 
 **Integrationsgrenze:** diese Brücke ist ausschließlich eine Koordinationsgrenze — sie ist kein Navigations- oder Motorsteuerungsknoten und kann HYDRA-UMC-SERVER, MCU-Grenzen, Watchdogs oder den E-STOP nicht umgehen; jeder versendete Auftrag durchläuft weiterhin dasselbe gemeinsame Gatter, das jede Schwesterbrücke verwendet.
 
