@@ -79,7 +79,7 @@ class JsonValidityTests(unittest.TestCase):
     def test_a_coordinate_that_overflows_is_refused_by_the_transform(self):
         transform = FrameTransform(origin_x=-1e308, origin_y=0.0, heading_rad=0.0, map_id="site-a")
         job = BridgeJob("j", "k", "s", JobPhase.PROCESS, MachineState.IDLE, {"x": "1e308", "y": "0"})
-        refused = AmrCoordinator().dispatch(job, CellState.READY, transform)
+        refused = AmrCoordinator().dispatch(job, CellState.READY, transform, MachineState.IDLE)
         self.assertFalse(refused.accepted)
         self.assertIn("real numbers", refused.reason)
         with self.assertRaises(ValueError):
@@ -99,10 +99,10 @@ class JsonValidityTests(unittest.TestCase):
         def job(x, y):
             return BridgeJob("j", "k", "s", JobPhase.PROCESS, MachineState.IDLE, {"x": str(x), "y": str(y)})
 
-        self.assertTrue(coordinator.dispatch(job(10, 10), CellState.READY, transform).accepted)
+        self.assertTrue(coordinator.dispatch(job(10, 10), CellState.READY, transform, MachineState.IDLE).accepted)
         for x, y in ((51, 10), (-1, 10), (10, 31), (10, -0.5), (1e9, 1e9)):
             with self.subTest(x=x, y=y):
-                self.assertFalse(coordinator.dispatch(job(x, y), CellState.READY, transform).accepted)
+                self.assertFalse(coordinator.dispatch(job(x, y), CellState.READY, transform, MachineState.IDLE).accepted)
 
     def test_nonsense_bounds_cannot_be_built(self):
         for bounds in ((0, 0, 0, 1), (5, 1, 0, 1), (0, 1, 0), (0, float("nan"), 0, 1)):

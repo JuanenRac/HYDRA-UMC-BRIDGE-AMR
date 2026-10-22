@@ -41,15 +41,22 @@ class ObservedStateTests(unittest.TestCase):
         dispatch = AmrCoordinator().dispatch(job(MachineState.FAULT), CellState.READY, TRANSFORM, MachineState.IDLE)
         self.assertTrue(dispatch.accepted)
 
-    def test_without_an_observation_the_claim_is_still_used(self):
-        self.assertTrue(AmrCoordinator().dispatch(job(MachineState.IDLE), CellState.READY, TRANSFORM).accepted)
-        self.assertFalse(AmrCoordinator().dispatch(job(MachineState.RUNNING), CellState.READY, TRANSFORM).accepted)
+    def test_without_an_observation_the_job_is_refused_whatever_it_claims(self):
+        # the claim in the job message is not a reading of the vehicle: no reading, no productive order
+        for claimed in (MachineState.IDLE, MachineState.RUNNING):
+            dispatch = AmrCoordinator().dispatch(job(claimed), CellState.READY, TRANSFORM)
+            self.assertFalse(dispatch.accepted)
+            self.assertIn("did not read", dispatch.reason)
+
+    def test_an_abort_needs_no_observation(self):
+        dispatch = AmrCoordinator().dispatch(job(phase=JobPhase.ABORT), CellState.READY, TRANSFORM)
+        self.assertTrue(dispatch.accepted)
 
 
 class OrderIdTests(unittest.TestCase):
     def order_id(self, publisher, header_id=1, **kwargs):
         client = Client()
-        dispatch = AmrCoordinator().dispatch(job(), CellState.READY, TRANSFORM)
+        dispatch = AmrCoordinator().dispatch(job(), CellState.READY, TRANSFORM, MachineState.IDLE)
         publisher.publish(client, TARGET, header_id, "2026-01-01T00:00:00Z", dispatch, **kwargs)
         return json.loads(client.published[0][1])["orderId"]
 

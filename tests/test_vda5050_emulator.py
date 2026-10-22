@@ -42,7 +42,7 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
         self.publisher = Vda5050Publisher()
 
     def _dispatch_and_publish(self, phase: JobPhase, header_id: int, **params: object):
-        dispatch = self.coordinator.dispatch(_job(phase, **params), CellState.READY, TRANSFORM)
+        dispatch = self.coordinator.dispatch(_job(phase, **params), CellState.READY, TRANSFORM, MachineState.IDLE)
         return self.publisher.publish(self.agv, TARGET, header_id, "2026-01-01T00:00:00Z", dispatch)
 
     def test_a_real_move_order_is_accepted_and_becomes_the_active_order(self) -> None:
@@ -109,7 +109,7 @@ class BridgeAgainstVda5050AgvTests(unittest.TestCase):
 
     def test_the_agv_rejects_a_message_addressed_to_a_different_serial(self) -> None:
         other_target = Vda5050Target("vda5050", "v2", "hydra-umc", "amr-99")
-        dispatch = self.coordinator.dispatch(_job(JobPhase.PROCESS, x=1.0, y=1.0), CellState.READY, TRANSFORM)
+        dispatch = self.coordinator.dispatch(_job(JobPhase.PROCESS, x=1.0, y=1.0), CellState.READY, TRANSFORM, MachineState.IDLE)
         with self.assertRaises(Vda5050ValidationError):
             self.publisher.publish(self.agv, other_target, 1, "2026-01-01T00:00:00Z", dispatch)
 

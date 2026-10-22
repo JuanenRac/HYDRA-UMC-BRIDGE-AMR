@@ -152,7 +152,7 @@ class Vda5050PublisherTests(unittest.TestCase):
 
         transform = FrameTransform(0.0, 0.0, 0.0, "site-a")
         job = BridgeJob("job-1", "idempotency-1", "amr-1", JobPhase.PROCESS, MachineState.IDLE, {"x": "3", "y": "4"})
-        dispatch = AmrCoordinator().dispatch(job, CellState.READY, transform)
+        dispatch = AmrCoordinator().dispatch(job, CellState.READY, transform, MachineState.IDLE)
         client = FakeMqttClient()
         result = Vda5050Publisher().publish(client, TARGET, 1, "2026-01-01T00:00:00Z", dispatch)
         self.assertTrue(result.published)

@@ -210,7 +210,7 @@ class AmrCoordinator:
                 return AmrDispatch(False, action, f"x/y must be real numbers, got x={x_raw!r} y={y_raw!r}")
             map_id = transform.map_id
 
-        # `observed_machine_state` is what the fleet manager reported about this vehicle; when given it replaces the claim written in the job (see HYDRA-UMC-SDK's evaluate_job)
+        # `observed_machine_state` is what the fleet manager reported about this vehicle (see Vda5050Observer.machine_state()); the claim written in the job is not a reading, so without it the SDK gate refuses every productive order (fail-closed)
         decision = evaluate_job(job, cell_state, observed_machine_state)
         channel = "instantActions" if action in self._INSTANT_ACTIONS else "order"
         return AmrDispatch(decision.allowed, action, decision.reason, local_x, local_y, map_id, channel=channel)

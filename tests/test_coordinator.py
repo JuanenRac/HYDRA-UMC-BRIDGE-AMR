@@ -73,7 +73,7 @@ class CoordinatorTests(unittest.TestCase):
         self.identity = FrameTransform(0.0, 0.0, 0.0, "site-a")
 
     def test_move_action_resolves_the_real_local_target(self):
-        result = self.coordinator.dispatch(job(parameters={"x": "4", "y": "6"}), CellState.READY, FrameTransform(1.0, 2.0, 0.0, "site-a"))
+        result = self.coordinator.dispatch(job(parameters={"x": "4", "y": "6"}), CellState.READY, FrameTransform(1.0, 2.0, 0.0, "site-a"), MachineState.IDLE)
         self.assertTrue(result.accepted)
         self.assertEqual(result.action, "MOVE_TO_DESTINATION")
         self.assertAlmostEqual(result.local_x, 3.0)
@@ -81,33 +81,33 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(result.map_id, "site-a")  # regression: real map identity carried through
 
     def test_move_action_without_coordinates_is_rejected_before_any_transport(self):
-        result = self.coordinator.dispatch(job(parameters={}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(parameters={}), CellState.READY, self.identity, MachineState.IDLE)
         self.assertFalse(result.accepted)
         self.assertIn("x", result.reason)
 
     def test_move_action_with_non_numeric_coordinates_is_rejected(self):
-        result = self.coordinator.dispatch(job(parameters={"x": "not-a-number", "y": "0"}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(parameters={"x": "not-a-number", "y": "0"}), CellState.READY, self.identity, MachineState.IDLE)
         self.assertFalse(result.accepted)
         self.assertIsNone(result.local_x)
 
     def test_move_action_with_non_finite_coordinates_is_rejected(self):
-        result = self.coordinator.dispatch(job(parameters={"x": "nan", "y": "0"}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(parameters={"x": "nan", "y": "0"}), CellState.READY, self.identity, MachineState.IDLE)
         self.assertFalse(result.accepted)
         self.assertIsNone(result.local_x)
 
     def test_pick_load_needs_no_coordinate(self):
-        result = self.coordinator.dispatch(job(JobPhase.LOAD, parameters={}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(JobPhase.LOAD, parameters={}), CellState.READY, self.identity, MachineState.IDLE)
         self.assertTrue(result.accepted)
         self.assertEqual(result.action, "PICK_LOAD")
         self.assertIsNone(result.local_x)
         self.assertIsNone(result.map_id)  # non-movement action - no coordinate, no map either
 
     def test_busy_machine_is_not_reused(self):
-        result = self.coordinator.dispatch(job(state=MachineState.RUNNING, parameters={"x": "0", "y": "0"}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity, MachineState.RUNNING)
         self.assertFalse(result.accepted)
 
     def test_cancel_order_stays_available_during_fault(self):
-        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT, {}), CellState.FAULT, self.identity)
+        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT, {}), CellState.FAULT, self.identity, MachineState.FAULT)
         self.assertTrue(result.accepted)
         self.assertEqual(result.action, "CANCEL_ORDER")
 
@@ -115,11 +115,11 @@ class CoordinatorTests(unittest.TestCase):
         # Real VDA 5050 wire compatibility: cancelOrder is a documented
         # instantActions-topic command, not an order-topic one - a future
         # transport adapter needs this to route it correctly.
-        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT, {}), CellState.FAULT, self.identity)
+        result = self.coordinator.dispatch(job(JobPhase.ABORT, MachineState.FAULT, {}), CellState.FAULT, self.identity, MachineState.FAULT)
         self.assertEqual(result.channel, "instantActions")
 
     def test_movement_and_load_actions_are_dispatched_on_the_real_order_channel(self):
-        result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity)
+        result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity, MachineState.IDLE)
         self.assertEqual(result.channel, "order")
 
     # (P2, shared
@@ -145,7 +145,7 @@ class CoordinatorTests(unittest.TestCase):
         # reads before returning) rather than a real BridgeJob the SDK
         # would now refuse to construct at all.
         unknown = SimpleNamespace(phase="SOME_FUTURE_PHASE")
-        result = self.coordinator.dispatch(unknown, CellState.READY, self.identity)
+        result = self.coordinator.dispatch(unknown, CellState.READY, self.identity, MachineState.IDLE)
         self.assertFalse(result.accepted)
         self.assertEqual(result.action, "none")
 

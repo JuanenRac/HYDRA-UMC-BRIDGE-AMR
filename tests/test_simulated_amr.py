@@ -14,7 +14,7 @@ TRANSFORM = FrameTransform(0.0, 0.0, 0.0, "site-a")
 
 def dispatch(phase, cell=CellState.READY):
     job = BridgeJob("job-1", "idem-1", "amr-1", phase, MachineState.IDLE, {"x": "1.0", "y": "2.0"})
-    return AmrCoordinator().dispatch(job, cell, TRANSFORM)
+    return AmrCoordinator().dispatch(job, cell, TRANSFORM, MachineState.IDLE)
 
 
 class SimulatedAmrTests(unittest.TestCase):
