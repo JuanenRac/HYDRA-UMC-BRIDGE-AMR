@@ -129,24 +129,6 @@ the old construction succeed again.
   including a disconnected-client (`rc=4`) probe and a movement dispatch
   missing `map_id`.
 
-## Maturity raised to established
-
-- **`open_mqtt_client()`'s initial MQTT connect now retries with backoff**
-  (`connect_with_retry()`, new) - this bridge used to fail outright if
-  called before HYDRA-UMC-MQTT-BROKER was listening yet, a real race
-  between two independent systemd units with no ordering guarantee
-  across a reboot. Only `OSError` (what an unreachable broker actually
-  raises) is retried; anything else surfaces immediately as a real bug.
-  Once connected, paho-mqtt's own `loop_start()` background thread
-  already handles a later mid-session drop on its own - only the first
-  connect needed this.
-- **`hydra-umc.project.json`** - `maturity` raised from `functional` to
-  `established`, matching the real substance already shipped in 0.0.4
-  (real, gated coordination logic plus a real VDA 5050 MQTT publisher,
-  lazily imported, same rigor and scope as sibling bridges already
-  marked `established` - e.g. HYDRA-UMC-BRIDGE-CNC). Metadata-only, no
-  code change, no version bump.
-
 ## [0.0.4] - Real VDA 5050 MQTT publisher (pre-real: connected, not simulated)
 
 - **`mqtt_transport.py`** (new) - this bridge's first real transport:
@@ -215,3 +197,23 @@ the old construction succeed again.
   and manifest to match the ecosystem's established-project structure.
 - No real fleet-manager REST/WebSocket adapter or physical AMR
   validated yet - this is a plan-only coordination boundary.
+
+## Earlier history
+
+### Maturity raised to established
+
+- **`open_mqtt_client()`'s initial MQTT connect now retries with backoff**
+  (`connect_with_retry()`, new) - this bridge used to fail outright if
+  called before HYDRA-UMC-MQTT-BROKER was listening yet, a real race
+  between two independent systemd units with no ordering guarantee
+  across a reboot. Only `OSError` (what an unreachable broker actually
+  raises) is retried; anything else surfaces immediately as a real bug.
+  Once connected, paho-mqtt's own `loop_start()` background thread
+  already handles a later mid-session drop on its own - only the first
+  connect needed this.
+- **`hydra-umc.project.json`** - `maturity` raised from `functional` to
+  `established`, matching the real substance already shipped in 0.0.4
+  (real, gated coordination logic plus a real VDA 5050 MQTT publisher,
+  lazily imported, same rigor and scope as sibling bridges already
+  marked `established` - e.g. HYDRA-UMC-BRIDGE-CNC). Metadata-only, no
+  code change, no version bump.
