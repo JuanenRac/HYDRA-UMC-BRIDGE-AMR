@@ -24,6 +24,8 @@ dependencies = [
 # every safety-relevant payload-building/gating test, works without it
 # installed.
 mqtt = ["paho-mqtt>=2.1,<3"]
+# The tests check every message against the official VDA 5050 JSON schemas.
+dev = ["jsonschema>=4.18,<5"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

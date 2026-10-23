@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.3` |
 | 成熟度 | 機能する |
-| テスト | 83 (`python tools/build_test.py`) |
+| テスト | 104 (`python tools/build_test.py`) |
 | 技術 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | 実機での確認 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 
@@ -45,6 +45,7 @@ GPL-3.0-or-later - see LICENSE
 `HYDRA-UMC-BRIDGE-DROIDS` および `HYDRA-UMC-BRIDGE-UAV` とともに **Mobile & Autonomous Bridges** ファミリーに属し、静的な **External Automation Bridges**(CNC、LASER、OPENPNP、PRINTER3D、ROS2)と同じ `HYDRA-UMC-SDK` のジョブ・安全契約を共有している —— つまりモバイルであれ静的であれ、いずれのブリッジも独自の「作業に安全」という定義を勝手に作ることはない。
 
 ### 主な機能:
+* 🧾 **公式 VDA 5050 スキーマと設定可能なホールド：** テストは、ブリッジが組み立てるすべてのメッセージを VDA 5050 2.0.0 の公式 JSON スキーマ（`order` と `instantActions`、`tests/vda5050_schemas` に同梱）に対して検証します。公式の instantActions スキーマが求めるため、即時アクションは `actionType` に加えて `actionName` を持ちます。`AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` を指定すると、中止フェーズは `cancelOrder`（既定）でオーダーを破棄する代わりに `startPause` で車両を保持します。どちらも常に転送されます。`MOVE_TO_HOME` は他の移動と同じゲートを通ります。*(実装済み)*
 * ✅ **実在する手計算で検証可能な座標系変換:** `FrameTransform` は、工場座標系の `(x, y)` を、そのAMR自身の実在する原点・方位を用いて特定のAMR自身のローカル座標系にマッピングする —— 単位変換ケース、純粋な並進、90度の方位回転、実在する往復テストによって検証済みである。*(実装済み、`tests/test_coordinator.py` でテスト済み)*
 * ✅ **実在するVDA 5050に着想を得たオーダーアクション語彙:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` は本物の VDA 5050 `order` トピック(キューに入り、ルートの一部)に発行され、`CANCEL_ORDER` は別個の本物の `instantActions` トピック(即時、オーダーキューを迂回)に発行されます。VDA 5050 自身の `cancelOrder` アクション名とその実際のチャネルの両方に一致し、[公式スキーマ](https://github.com/VDA5050/VDA5050/tree/main/json_schemas)で確認済みです。*(実装済み)*
 * ✅ **実在するアクションごとの座標検証:** `x`/`y` が欠けている、あるいは数値でない値を持つ移動アクションは、変換が実行される前にローカルで拒否される。*(実装済み、テスト済み)*

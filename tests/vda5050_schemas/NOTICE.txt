@@ -1,0 +1,4 @@
+order.schema.json and instantActions.schema.json are the official VDA 5050 version 2.0.0 JSON schemas, copied unchanged from
+https://github.com/VDA5050/VDA5050 (tag 2.0.0, folder json_schemas, files order.schema and instantActions.schema).
+The VDA 5050 project is published under the MIT licence. They are used only by the tests, to check that the messages this bridge
+builds are valid against the official schemas.

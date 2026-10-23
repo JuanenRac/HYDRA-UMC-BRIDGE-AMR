@@ -274,7 +274,9 @@ class Vda5050Publisher:
             # HARD blocks everything else, per VDA 5050's own real blockingType enum
             # (NONE/SOFT/SINGLE/HARD) - a cancel-order-class action must preempt, not
             # queue behind whatever the AGV is already doing.
-            payload = {**header, "actions": [action]}
+            # The official VDA 5050 2.0.0 instantActions schema names the action field "actionName" (its order schema says "actionType"), so an
+            # instant action carries both with the same value: a fleet manager reading either finds it.
+            payload = {**header, "actions": [{**action, "actionName": wire_type}]}
         else:
             node: dict[str, object] = {
                 "nodeId": unique,

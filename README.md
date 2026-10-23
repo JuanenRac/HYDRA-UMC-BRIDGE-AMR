@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.3` |
 | Maturity | Functional |
-| Tests | 83 (`python tools/build_test.py`) |
+| Tests | 104 (`python tools/build_test.py`) |
 | Stack | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | On real hardware | Simulated only: tested against emulators, fakes or simulators; no run on real hardware is recorded for this version |
 
@@ -45,6 +45,7 @@ GPL-3.0-or-later - see LICENSE
 It belongs to the **Mobile & Autonomous Bridges** family alongside `HYDRA-UMC-BRIDGE-DROIDS` and `HYDRA-UMC-BRIDGE-UAV`, and shares the same `HYDRA-UMC-SDK` job-and-safety contract as the stationary **External Automation Bridges** (CNC, LASER, OPENPNP, PRINTER3D, ROS2) - so no bridge, mobile or stationary, invents its own definition of "safe to work".
 
 ### Key Features:
+* 🧾 **Official VDA 5050 schemas and a configurable hold:** the tests check every message the bridge builds against the official VDA 5050 2.0.0 JSON schemas (`order` and `instantActions`, vendored in `tests/vda5050_schemas`); an instant action now carries `actionName` next to `actionType`, because the official instantActions schema asks for it. `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` makes the abort phase hold the vehicle with `startPause` instead of dropping its order with `cancelOrder` (the default); both are always forwarded. `MOVE_TO_HOME` goes through the same gate as every movement. *(implemented)*
 * ✅ **Real, hand-checkable coordinate-frame transform:** `FrameTransform` maps a factory-frame `(x, y)` into a specific AMR's own local frame given that AMR's real origin/heading on the factory floor - verified with an identity case, a pure translation, a 90-degree heading rotation and a real round-trip test. *(implemented, tested in `tests/test_coordinator.py`)*
 * ✅ **Real, VDA-5050-inspired order-action vocabulary, on the real two-channel split:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` publish on the real VDA 5050 `order` topic (queued, part of a route); `CANCEL_ORDER` publishes on the real, separate `instantActions` topic (immediate, bypasses the order queue) - matching VDA 5050's own real `cancelOrder` action name AND its own real channel, checked against the [official schemas](https://github.com/VDA5050/VDA5050/tree/main/json_schemas). *(implemented)*
 * ✅ **Real per-action coordinate validation:** a movement action missing `x`/`y`, or carrying a non-numeric one, is rejected locally before the transform ever runs. *(implemented, tested)*

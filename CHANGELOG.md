@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The messages are checked against the official VDA 5050 2.0.0 JSON schemas** (`order` and `instantActions`, vendored under `tests/vda5050_schemas`; the `dev` extra installs `jsonschema`). The check found that an instant action lacked `actionName`, which the official instantActions schema requires: it is now sent next to `actionType`.
+- **A configurable hold.** `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` sends VDA 5050 `startPause` in the abort phase instead of `cancelOrder` (still the default); both are always forwarded whatever the cell state. `stopPause` has its wire type but no job phase yet.
+- Going home (`MOVE_TO_HOME`) goes through the same gate as every movement, with tests; the open question in the guide is closed.
 - Building no longer changes the version; raising it is the explicit `bump` command (`python tools/hydra_project_tool.py bump`). The build scripts only report the version they built, and CI fails if a build script runs a bump.
 - The banner follows the animated style of the ecosystem banners, with the name, the kind and the technologies of the project.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.

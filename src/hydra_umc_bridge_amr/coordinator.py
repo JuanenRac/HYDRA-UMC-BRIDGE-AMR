@@ -147,13 +147,15 @@ class AmrCoordinator:
     DROP_LOAD = "DROP_LOAD"
     MOVE_TO_HOME = "MOVE_TO_HOME"
     CANCEL_ORDER = "CANCEL_ORDER"  # the internal name of VDA 5050's "cancelOrder" instant action
+    START_PAUSE = "START_PAUSE"  # VDA 5050's "startPause" instant action: hold the vehicle where it is, keep its order
+    STOP_PAUSE = "STOP_PAUSE"  # VDA 5050's "stopPause" instant action: let a paused vehicle go on (a motion: it goes through the gate)
 
     # What each action is called on the wire. VDA 5050 action types are
     # case-sensitive camelCase words and only a few exist: pick, drop and
     # cancelOrder are the ones used here. The movement actions have no action
     # type at all - a VDA 5050 AGV moves along the nodes and edges of an order,
     # so the destination node carries no invented action.
-    VDA_ACTION_TYPES = {PICK_LOAD: "pick", DROP_LOAD: "drop", CANCEL_ORDER: "cancelOrder"}
+    VDA_ACTION_TYPES = {PICK_LOAD: "pick", DROP_LOAD: "drop", CANCEL_ORDER: "cancelOrder", START_PAUSE: "startPause", STOP_PAUSE: "stopPause"}
 
     _MOVEMENT_ACTIONS = {MOVE_TO_STAGING, MOVE_TO_DESTINATION, MOVE_TO_HOME}
 
@@ -170,7 +172,12 @@ class AmrCoordinator:
     # would never see it if this bridge published it as an order action
     # instead. This set is what future transport adapter work reads to
     # route each action to its real, correct topic.
-    _INSTANT_ACTIONS = {CANCEL_ORDER}
+    _INSTANT_ACTIONS = {CANCEL_ORDER, START_PAUSE, STOP_PAUSE}
+
+    # What the ABORT phase sends. cancelOrder is the default (the vehicle drops its order); startPause is the configurable
+    # "hold" (the vehicle stops where it is and keeps the order, to be resumed or cancelled later). Both are safety actions
+    # and are always forwarded, whatever the cell state.
+    ABORT_ACTIONS = (CANCEL_ORDER, START_PAUSE)
 
     _phase_actions = {
         JobPhase.PREPARE: MOVE_TO_STAGING,
@@ -184,6 +191,11 @@ class AmrCoordinator:
         # abort for a fleet order.
         JobPhase.ABORT: CANCEL_ORDER,
     }
+
+    def __init__(self, abort_action: str = CANCEL_ORDER) -> None:
+        if abort_action not in self.ABORT_ACTIONS:
+            raise ValueError(f"abort_action must be one of {self.ABORT_ACTIONS}, got {abort_action!r}")
+        self._phase_actions = {**self._phase_actions, JobPhase.ABORT: abort_action}
 
     def order_plan(self) -> AmrOrderPlan:
         """Return the static order-action vocabulary without opening any real transport."""

@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.3` |
 | Maturité | Fonctionnel |
-| Tests | 83 (`python tools/build_test.py`) |
+| Tests | 104 (`python tools/build_test.py`) |
 | Technologie | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | Sur matériel réel | Simulé seulement : testé avec des émulateurs, des doubles de test ou des simulateurs ; aucune exécution sur du matériel réel n'est consignée pour cette version |
 
@@ -45,6 +45,7 @@ GPL-3.0-or-later - see LICENSE
 Il appartient à la famille **Mobile & Autonomous Bridges**, aux côtés de `HYDRA-UMC-BRIDGE-DROIDS` et `HYDRA-UMC-BRIDGE-UAV`, et partage le même contrat de tâches et de sécurité `HYDRA-UMC-SDK` que les **External Automation Bridges** stationnaires (CNC, LASER, OPENPNP, PRINTER3D, ROS2).
 
 ### Fonctionnalités clés :
+* 🧾 **Schémas VDA 5050 officiels et maintien configurable :** les tests valident chaque message construit par le pont contre les schémas JSON officiels de VDA 5050 2.0.0 (`order` et `instantActions`, fournis dans `tests/vda5050_schemas`) ; une action instantanée porte désormais `actionName` à côté de `actionType`, car le schéma officiel instantActions l'exige. `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` fait que la phase d'arrêt maintient le véhicule avec `startPause` au lieu d'abandonner son ordre avec `cancelOrder` (le défaut) ; les deux sont toujours transmises. `MOVE_TO_HOME` passe par la même porte que tout mouvement. *(implémenté)*
 * ✅ **Transformation réelle de repère de coordonnées, vérifiable à la main :** `FrameTransform` mappe une coordonnée `(x, y)` du repère usine vers le repère local propre d'un AMR donné, à partir de l'origine et du cap réels de cet AMR sur le site — vérifiée par un cas identité, une translation pure, une rotation de cap de 90 degrés et un véritable test aller-retour. *(implémenté, testé dans `tests/test_coordinator.py`)*
 * ✅ **Vocabulaire réel d'actions d'ordre inspiré de VDA 5050 :** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` sont publiés sur le topic `order` réel de VDA 5050 (en file d'attente, partie d'une route) ; `CANCEL_ORDER` est publié sur le topic `instantActions` réel et distinct (immédiat, contourne la file d'ordres) - conforme au nom réel de l'action `cancelOrder` de VDA 5050 ET à son canal réel, vérifié avec les [schémas officiels](https://github.com/VDA5050/VDA5050/tree/main/json_schemas). *(implémenté)*
 * ✅ **Validation réelle des coordonnées par action :** une action de déplacement à laquelle il manque `x`/`y`, ou qui en porte une non numérique, est rejetée localement avant même que la transformation ne s'exécute. *(implémenté, testé)*

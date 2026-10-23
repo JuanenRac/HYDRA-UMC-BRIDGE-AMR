@@ -102,6 +102,22 @@ class CoordinatorTests(unittest.TestCase):
         self.assertIsNone(result.local_x)
         self.assertIsNone(result.map_id)  # non-movement action - no coordinate, no map either
 
+    def test_going_home_goes_through_the_same_gate_as_every_movement(self):
+        # decided: MOVE_TO_HOME is not exempt like the cancel; only the cancel stays reachable when the cell is not ready
+        home = job(JobPhase.COMPLETE, parameters={"x": "1", "y": "2"})
+        ready = self.coordinator.dispatch(home, CellState.READY, self.identity, MachineState.IDLE)
+        self.assertTrue(ready.accepted)
+        self.assertEqual(ready.action, "MOVE_TO_HOME")
+        for cell in (CellState.INHIBITED, CellState.FAULT):
+            refused = self.coordinator.dispatch(home, cell, self.identity, MachineState.IDLE)
+            self.assertFalse(refused.accepted, cell)
+            self.assertEqual(refused.action, "MOVE_TO_HOME")
+        busy = self.coordinator.dispatch(home, CellState.READY, self.identity, MachineState.RUNNING)
+        self.assertFalse(busy.accepted)
+        # a vehicle that reported nothing is not assumed idle
+        unknown = self.coordinator.dispatch(home, CellState.READY, self.identity, None)
+        self.assertFalse(unknown.accepted)
+
     def test_busy_machine_is_not_reused(self):
         result = self.coordinator.dispatch(job(parameters={"x": "0", "y": "0"}), CellState.READY, self.identity, MachineState.RUNNING)
         self.assertFalse(result.accepted)

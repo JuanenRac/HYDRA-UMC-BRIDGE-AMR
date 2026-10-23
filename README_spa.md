@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versión | `0.1.3` |
 | Madurez | Funcional |
-| Tests | 83 (`python tools/build_test.py`) |
+| Tests | 104 (`python tools/build_test.py`) |
 | Tecnología | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | En hardware real | Solo simulado: probado con emuladores, dobles de prueba o simuladores; no consta ninguna ejecución en hardware real para esta versión |
 
@@ -45,6 +45,7 @@ GPL-3.0-or-later - see LICENSE
 Pertenece a la familia **Mobile & Autonomous Bridges** junto a `HYDRA-UMC-BRIDGE-DROIDS` y `HYDRA-UMC-BRIDGE-UAV`, y comparte el mismo contrato de trabajo y seguridad de `HYDRA-UMC-SDK` que los **External Automation Bridges** estacionarios (CNC, LASER, OPENPNP, PRINTER3D, ROS2).
 
 ### Características clave:
+* 🧾 **Esquemas oficiales de VDA 5050 y una retención configurable:** las pruebas validan cada mensaje que construye el puente contra los esquemas JSON oficiales de VDA 5050 2.0.0 (`order` e `instantActions`, incluidos en `tests/vda5050_schemas`); una acción instantánea lleva ahora `actionName` junto a `actionType`, porque el esquema oficial de instantActions lo pide. `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` hace que la fase de aborto retenga el vehículo con `startPause` en vez de descartar su orden con `cancelOrder` (el valor por defecto); ambas se reenvían siempre. `MOVE_TO_HOME` pasa por la misma puerta que cualquier movimiento. *(implementado)*
 * ✅ **Transformación real de marco de coordenadas, comprobable a mano:** `FrameTransform` mapea una coordenada `(x, y)` del marco de fábrica al marco local propio de un AMR concreto, dados su origen y su rumbo reales en la planta - verificada con un caso identidad, una traslación pura, una rotación de 90 grados y un test real de ida y vuelta. *(implementado, probado en `tests/test_coordinator.py`)*
 * ✅ **Vocabulario real de acciones de orden inspirado en VDA 5050:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` se publican en el topic `order` real de VDA 5050 (en cola, parte de una ruta); `CANCEL_ORDER` se publica en el topic `instantActions` real y separado (inmediato, se salta la cola de órdenes) - coincide con el nombre real de la acción `cancelOrder` de VDA 5050 Y con su canal real, comprobado contra los [esquemas oficiales](https://github.com/VDA5050/VDA5050/tree/main/json_schemas). *(implementado)*
 * ✅ **Validación real de coordenadas por acción:** una acción de movimiento a la que le falten `x`/`y`, o con un valor no numérico, se rechaza localmente antes de que se ejecute la transformación. *(implementado, probado)*

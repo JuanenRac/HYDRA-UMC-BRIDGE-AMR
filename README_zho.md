@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.3` |
 | 成熟度 | 可用 |
-| 测试 | 83 (`python tools/build_test.py`) |
+| 测试 | 104 (`python tools/build_test.py`) |
 | 技术栈 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | 真实硬件 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 
@@ -45,6 +45,7 @@ GPL-3.0-or-later - see LICENSE
 它与 `HYDRA-UMC-BRIDGE-DROIDS` 和 `HYDRA-UMC-BRIDGE-UAV` 同属 **Mobile & Autonomous Bridges** 家族,并与固定式的 **External Automation Bridges**(CNC、LASER、OPENPNP、PRINTER3D、ROS2)共享同一个 `HYDRA-UMC-SDK` 任务与安全契约——因此无论是移动式还是固定式,任何一个桥接都不能自行发明"可以安全工作"的定义。
 
 ### 核心特性:
+* 🧾 **官方 VDA 5050 模式与可配置的保持：** 测试会用 VDA 5050 2.0.0 的官方 JSON 模式（`order` 和 `instantActions`，收录在 `tests/vda5050_schemas`）校验桥接构造的每条消息；由于官方 instantActions 模式要求，即时动作现在在 `actionType` 之外还带有 `actionName`。`AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` 使中止阶段用 `startPause` 保持车辆，而不是用 `cancelOrder`（默认）丢弃其订单；两者始终被转发。`MOVE_TO_HOME` 与其他任何移动一样经过同一道闸门。*(已实现)*
 * ✅ **真实的、可手工核验的坐标系变换:** `FrameTransform` 根据某台 AMR 在工厂地面上真实的原点/朝向,把工厂坐标系中的 `(x, y)` 映射到该 AMR 自身的本地坐标系——通过一个恒等情形、一个纯平移、一个 90 度朝向旋转以及一个真实的往返测试进行了验证。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
 * ✅ **真实的、受 VDA-5050 启发的订单动作词汇:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` 发布到真实的 VDA 5050 `order` 主题(排队,属于路线的一部分);`CANCEL_ORDER` 发布到真实且独立的 `instantActions` 主题(即时,绕过订单队列)——与 VDA 5050 自身的 `cancelOrder` 动作名称及其真实通道均一致,已对照[官方 schema](https://github.com/VDA5050/VDA5050/tree/main/json_schemas)核实。*(已实现)*
 * ✅ **真实的按动作坐标校验:** 缺少 `x`/`y`,或携带非数值坐标的移动动作,会在变换运行之前就在本地被拒绝。*(已实现,已测试)*
