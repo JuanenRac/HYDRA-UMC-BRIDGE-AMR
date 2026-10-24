@@ -21,7 +21,8 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState, evaluate_job
+from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
+from hydra_umc_sdk.phase_coordinator import PhaseCoordinator
 
 
 @dataclass(frozen=True)
@@ -178,6 +179,9 @@ class AmrCoordinator:
     # "hold" (the vehicle stops where it is and keeps the order, to be resumed or cancelled later). Both are safety actions
     # and are always forwarded, whatever the cell state.
     ABORT_ACTIONS = (CANCEL_ORDER, START_PAUSE)
+    # Both at once: the vehicle drops its order and holds where it is. Two instant actions are published, cancelOrder first.
+    ABORT_BOTH = "CANCEL_AND_PAUSE"
+    _ABORT_CHOICES = (CANCEL_ORDER, START_PAUSE, ABORT_BOTH)
 
     _phase_actions = {
         JobPhase.PREPARE: MOVE_TO_STAGING,
@@ -193,20 +197,32 @@ class AmrCoordinator:
     }
 
     def __init__(self, abort_action: str = CANCEL_ORDER) -> None:
-        if abort_action not in self.ABORT_ACTIONS:
-            raise ValueError(f"abort_action must be one of {self.ABORT_ACTIONS}, got {abort_action!r}")
-        self._phase_actions = {**self._phase_actions, JobPhase.ABORT: abort_action}
+        if abort_action not in self._ABORT_CHOICES:
+            raise ValueError(f"abort_action must be one of {self._ABORT_CHOICES}, got {abort_action!r}")
+        self._abort_action = abort_action
+        # the first action of the abort; for CANCEL_AND_PAUSE the pause follows it (see dispatch_all)
+        first = self.CANCEL_ORDER if abort_action == self.ABORT_BOTH else abort_action
+        self._phase_actions = {**self._phase_actions, JobPhase.ABORT: first}
+        # the shared coordinator holds the steps every bridge has: the table of phases, the gate and the actions that are
+        # always forwarded; the target of a movement depends on the vehicle's frame, so this class resolves it
+        self._phases = PhaseCoordinator(
+            self._phase_actions,
+            safe_actions=frozenset({self.CANCEL_ORDER, self.START_PAUSE}),
+            extra_actions=(self.STOP_PAUSE,),
+        )
 
     def order_plan(self) -> AmrOrderPlan:
         """Return the static order-action vocabulary without opening any real transport."""
 
-        all_actions = tuple(self._phase_actions.values())
+        all_actions = self._phases.vocabulary()
         order_actions = tuple(a for a in all_actions if a not in self._INSTANT_ACTIONS)
         instant_actions = tuple(a for a in all_actions if a in self._INSTANT_ACTIONS)
+        if self._abort_action == self.ABORT_BOTH and self.START_PAUSE not in instant_actions:
+            instant_actions = (*instant_actions, self.START_PAUSE)
         return AmrOrderPlan("1.1", "plan-only", order_actions, instant_actions)
 
     def dispatch(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform, observed_machine_state: MachineState | None = None) -> AmrDispatch:
-        action = self._phase_actions.get(job.phase)
+        action = self._phases.action_for(job.phase)
         if action is None:
             return AmrDispatch(False, "none", "job phase has no mapped AMR order action")
 
@@ -223,6 +239,35 @@ class AmrCoordinator:
             map_id = transform.map_id
 
         # `observed_machine_state` is what the fleet manager reported about this vehicle (see Vda5050Observer.machine_state()); the claim written in the job is not a reading, so without it the SDK gate refuses every productive order (fail-closed)
-        decision = evaluate_job(job, cell_state, observed_machine_state)
+        decision = self._phases.decide(job, cell_state, observed_machine_state)
         channel = "instantActions" if action in self._INSTANT_ACTIONS else "order"
-        return AmrDispatch(decision.allowed, action, decision.reason, local_x, local_y, map_id, channel=channel)
+        return AmrDispatch(decision.accepted, action, decision.reason, local_x, local_y, map_id, channel=channel)
+
+    def dispatch_all(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform, observed_machine_state: MachineState | None = None) -> tuple[AmrDispatch, ...]:
+        """Every dispatch the job asks for: one, or two for an ABORT configured as CANCEL_AND_PAUSE (cancelOrder, then startPause).
+
+        Both are safety actions and are always forwarded; a transport publishes them in this order.
+        """
+
+        first = self.dispatch(job, cell_state, transform, observed_machine_state)
+        if self._abort_action == self.ABORT_BOTH and job.phase is JobPhase.ABORT:
+            pause = AmrDispatch(True, self.START_PAUSE, f"{self.START_PAUSE} is always forwarded together with {self.CANCEL_ORDER}", channel="instantActions")
+            return (first, pause)
+        return (first,)
+
+    def resume(self, cell_state: CellState, observed_machine_state: MachineState | None) -> AmrDispatch:
+        """Let a paused vehicle go on (VDA 5050 stopPause).
+
+        Going on is a motion, so it is not a safety action and it is never forwarded blindly: the cell must be READY and the
+        vehicle must have been READ as HOLDING (paused). A vehicle that is held on purpose therefore stays held while the cell
+        is not READY, and a vehicle whose state was not read is refused (fail closed).
+        """
+
+        action = self.STOP_PAUSE
+        if cell_state is not CellState.READY:
+            return AmrDispatch(False, action, f"cell is {cell_state.value}, not READY", channel="instantActions")
+        if observed_machine_state is None:
+            return AmrDispatch(False, action, "the bridge did not read the state of its machine: stopPause is refused", channel="instantActions")
+        if observed_machine_state is not MachineState.HOLDING:
+            return AmrDispatch(False, action, f"external machine is {observed_machine_state.value}, not HOLDING (paused)", channel="instantActions")
+        return AmrDispatch(True, action, "cell is ready and the vehicle is paused", channel="instantActions")

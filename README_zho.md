@@ -22,7 +22,7 @@ GPL-3.0-or-later - see LICENSE
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 83 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
+> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 110 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。
 
 ---
 
@@ -45,7 +45,7 @@ GPL-3.0-or-later - see LICENSE
 它与 `HYDRA-UMC-BRIDGE-DROIDS` 和 `HYDRA-UMC-BRIDGE-UAV` 同属 **Mobile & Autonomous Bridges** 家族,并与固定式的 **External Automation Bridges**(CNC、LASER、OPENPNP、PRINTER3D、ROS2)共享同一个 `HYDRA-UMC-SDK` 任务与安全契约——因此无论是移动式还是固定式,任何一个桥接都不能自行发明"可以安全工作"的定义。
 
 ### 核心特性:
-* 🧾 **官方 VDA 5050 模式与可配置的保持：** 测试会用 VDA 5050 2.0.0 的官方 JSON 模式（`order` 和 `instantActions`，收录在 `tests/vda5050_schemas`）校验桥接构造的每条消息；由于官方 instantActions 模式要求，即时动作现在在 `actionType` 之外还带有 `actionName`。`AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` 使中止阶段用 `startPause` 保持车辆，而不是用 `cancelOrder`（默认）丢弃其订单；两者始终被转发。`MOVE_TO_HOME` 与其他任何移动一样经过同一道闸门。*(已实现)*
+* 🧾 **官方 VDA 5050 模式与可配置的保持：** 测试会用 VDA 5050 2.0.0 的官方 JSON 模式（`order` 和 `instantActions`，收录在 `tests/vda5050_schemas`）校验桥接构造的每条消息；由于官方 instantActions 模式要求，即时动作现在在 `actionType` 之外还带有 `actionName`。`AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` 使中止阶段用 `startPause` 保持车辆，而不是用 `cancelOrder`（默认）丢弃其订单；两者始终被转发。`MOVE_TO_HOME` 与其他任何移动一样经过同一道闸门。 `AmrCoordinator.resume()` 仅在单元为 READY 且读取到车辆处于暂停时才发送 `stopPause`；`abort_action=AmrCoordinator.ABORT_BOTH` 先发送 `cancelOrder`，再发送 `startPause`。 *(已实现)*
 * ✅ **真实的、可手工核验的坐标系变换:** `FrameTransform` 根据某台 AMR 在工厂地面上真实的原点/朝向,把工厂坐标系中的 `(x, y)` 映射到该 AMR 自身的本地坐标系——通过一个恒等情形、一个纯平移、一个 90 度朝向旋转以及一个真实的往返测试进行了验证。*(已实现,并在 `tests/test_coordinator.py` 中测试)*
 * ✅ **真实的、受 VDA-5050 启发的订单动作词汇:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` 发布到真实的 VDA 5050 `order` 主题(排队,属于路线的一部分);`CANCEL_ORDER` 发布到真实且独立的 `instantActions` 主题(即时,绕过订单队列)——与 VDA 5050 自身的 `cancelOrder` 动作名称及其真实通道均一致,已对照[官方 schema](https://github.com/VDA5050/VDA5050/tree/main/json_schemas)核实。*(已实现)*
 * ✅ **真实的按动作坐标校验:** 缺少 `x`/`y`,或携带非数值坐标的移动动作,会在变换运行之前就在本地被拒绝。*(已实现,已测试)*
@@ -140,7 +140,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(所有 `test_*.py` 文件——共 83 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
+`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(所有 `test_*.py` 文件——共 110 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
 
 ---
 
