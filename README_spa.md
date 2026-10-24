@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # Estado observado de la máquina e ids de orden que sobreviven a un reinicio
 │   ├── test_hardening.py        # Client id, respuesta del broker, observador, nombres en el cable, ids de cabecera, JSON finito
 │   ├── vda5050_emulator.py      # Emulador de VDA 5050 AGV fiel al protocolo (doble de prueba realista)
-│   └── test_vda5050_emulator.py # Comportamiento del bridge frente al emulador VDA 5050 AGV
+│   ├── test_vda5050_emulator.py # Comportamiento del bridge frente al emulador VDA 5050 AGV
+│   ├── test_edge_cases.py       # Ids de cabecera, marcas de tiempo, cancelación inmediata y órdenes no codificables
+│   ├── test_vda5050_schemas.py  # Cada mensaje que construye el publicador es válido frente a los esquemas JSON oficiales de VDA 5050 2.0.0
+│   └── vda5050_schemas/         # Los esquemas JSON oficiales de VDA 5050 2.0.0, copiados sin cambios (con su NOTICE)
 ├── tools/
 │   ├── build_test.py            # Compilación + tests sin mutación (build-test.bat/.sh)
 │   ├── bump_version.py          # Sincroniza pyproject.toml, manifiesto y CHANGELOG.md
 │   ├── ci_validate.py           # Línea base de CI sin dependencias y no destructiva (usada por .github/workflows/ci.yml)
-│   └── inspect_order_plan.py    # Imprime el plan de orden estático (sin abrir transporte)
+│   ├── inspect_order_plan.py    # Imprime el plan de orden estático (sin abrir transporte)
+│   ├── _doc_policy.py           # Reglas de documentación compartidas por la familia (copia de la de HYDRA-UMC-SDK, mantenida en sincronía)
+│   ├── _readme_parity.py        # Comprobación de que los ocho README comparten estructura (copia de la de HYDRA-UMC-SDK, mantenida en sincronía)
+│   ├── hydra_project_tool.py    # Los mismos comandos en todos los repositorios: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Los pasos de compilación propios de este repositorio además de la prueba de compilación compartida (sus tests unitarios)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Alcance, plataformas compatibles, scripts, puerta de aceptación de hardware
 ├── images/

@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # 観測した機器の状態と、再起動後も重複しないオーダー ID
 │   ├── test_hardening.py        # クライアントID、ブローカーの応答、オブザーバー、ワイヤ上の名前、ヘッダーID、有限なJSON
 │   ├── vda5050_emulator.py      # プロトコル忠実な VDA 5050 AGV エミュレータ（現実的なテストダブル）
-│   └── test_vda5050_emulator.py # VDA 5050 AGV エミュレータに対する bridge の振る舞い
+│   ├── test_vda5050_emulator.py # VDA 5050 AGV エミュレータに対する bridge の振る舞い
+│   ├── test_edge_cases.py       # ヘッダー ID、タイムスタンプ、即時キャンセル、エンコードできないオーダー
+│   ├── test_vda5050_schemas.py  # パブリッシャーが作る全メッセージが公式の VDA 5050 2.0.0 JSON スキーマに適合
+│   └── vda5050_schemas/         # 公式の VDA 5050 2.0.0 JSON スキーマを無変更でコピー (NOTICE 付き)
 ├── tools/
 │   ├── build_test.py            # 非破壊的なコンパイル+テストランナー (build-test.bat/.sh)
 │   ├── bump_version.py          # pyproject.toml、マニフェスト、CHANGELOG.md を同期
 │   ├── ci_validate.py           # 依存関係なし・非破壊のCIベースライン (.github/workflows/ci.yml が使用)
-│   └── inspect_order_plan.py    # 静的なオーダープランを出力する(トランスポートを開かない)
+│   ├── inspect_order_plan.py    # 静的なオーダープランを出力する(トランスポートを開かない)
+│   ├── _doc_policy.py           # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── _readme_parity.py        # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── hydra_project_tool.py    # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
+│   └── extra_build_steps.py     # 共通のビルドテストに加えた、このリポジトリ固有のビルド手順 (独自のユニットテスト)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 適用範囲、対応プラットフォーム、スクリプト、ハードウェア受け入れゲート
 ├── images/

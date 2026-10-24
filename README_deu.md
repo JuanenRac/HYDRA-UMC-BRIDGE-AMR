@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # Beobachteter Maschinenzustand und Auftrags-IDs, die einen Neustart überstehen
 │   ├── test_hardening.py        # Client-ID, Broker-Antwort, Beobachter, Namen auf dem Draht, Header-IDs, endliches JSON
 │   ├── vda5050_emulator.py      # Protokolltreuer VDA 5050 AGV-Emulator (realistischer Test-Double)
-│   └── test_vda5050_emulator.py # Bridge-Verhalten gegenüber dem VDA 5050 AGV-Emulator
+│   ├── test_vda5050_emulator.py # Bridge-Verhalten gegenüber dem VDA 5050 AGV-Emulator
+│   ├── test_edge_cases.py       # Header-IDs, Zeitstempel, sofortiger Abbruch und nicht kodierbare Aufträge
+│   ├── test_vda5050_schemas.py  # Jede vom Publisher gebaute Nachricht ist gegen die offiziellen VDA-5050-2.0.0-JSON-Schemas gültig
+│   └── vda5050_schemas/         # Die offiziellen VDA-5050-2.0.0-JSON-Schemas, unverändert kopiert (mit ihrer NOTICE)
 ├── tools/
 │   ├── build_test.py            # Nicht-mutierender Compiler + Testläufer (build-test.bat/.sh)
 │   ├── bump_version.py          # Synchronisiert pyproject.toml, Manifest und CHANGELOG.md
 │   ├── ci_validate.py           # Abhängigkeitsfreie, nicht-destruktive CI-Basislinie (verwendet von .github/workflows/ci.yml)
-│   └── inspect_order_plan.py    # Gibt den statischen Order-Plan aus (kein Transport geöffnet)
+│   ├── inspect_order_plan.py    # Gibt den statischen Order-Plan aus (kein Transport geöffnet)
+│   ├── _doc_policy.py           # Von der Familie geteilte Dokumentationsregeln (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   ├── _readme_parity.py        # Prüfung, dass die acht READMEs dieselbe Struktur haben (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   ├── hydra_project_tool.py    # Dieselben Befehle in jedem Repository: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Die eigenen Build-Schritte dieses Repositorys neben dem gemeinsamen Build-Test (seine Unit-Tests)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Umfang, kompatible Plattformen, Skripte, Hardware-Abnahmegatter
 ├── images/

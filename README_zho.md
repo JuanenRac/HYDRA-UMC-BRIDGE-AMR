@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # 观测到的机器状态与重启后不重复的订单 ID
 │   ├── test_hardening.py        # 客户端 ID、代理应答、观察者、线路上的名称、头部 ID、有限的 JSON
 │   ├── vda5050_emulator.py      # 协议忠实的 VDA 5050 AGV 模拟器（真实的测试替身）
-│   └── test_vda5050_emulator.py # 针对 VDA 5050 AGV 模拟器的 bridge 行为
+│   ├── test_vda5050_emulator.py # 针对 VDA 5050 AGV 模拟器的 bridge 行为
+│   ├── test_edge_cases.py       # 头部 ID、时间戳、即时取消和无法编码的指令
+│   ├── test_vda5050_schemas.py  # 发布器构建的每条消息都符合官方 VDA 5050 2.0.0 JSON 模式
+│   └── vda5050_schemas/         # 官方 VDA 5050 2.0.0 JSON 模式,原样复制 (附 NOTICE)
 ├── tools/
 │   ├── build_test.py            # 非变更式编译 + 测试运行器 (build-test.bat/.sh)
 │   ├── bump_version.py          # 同步 pyproject.toml、清单和 CHANGELOG.md
 │   ├── ci_validate.py           # 无依赖、非破坏性的CI基线检查 (由 .github/workflows/ci.yml 使用)
-│   └── inspect_order_plan.py    # 打印静态订单计划(不打开传输通道)
+│   ├── inspect_order_plan.py    # 打印静态订单计划(不打开传输通道)
+│   ├── _doc_policy.py           # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── _readme_parity.py        # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── hydra_project_tool.py    # 每个仓库相同的命令: validate、test、ci、version、status、bump
+│   └── extra_build_steps.py     # 除共享构建测试外,本仓库自己的构建步骤 (自带的单元测试)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # 范围、兼容平台、脚本、硬件验收门控
 ├── images/

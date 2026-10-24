@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # État observé de la machine et identifiants d'ordre qui survivent à un redémarrage
 │   ├── test_hardening.py        # Client id, réponse du broker, observateur, noms sur le fil, ids d'en-tête, JSON fini
 │   ├── vda5050_emulator.py      # Émulateur VDA 5050 AGV fidèle au protocole (double de test réaliste)
-│   └── test_vda5050_emulator.py # Comportement du bridge face à l'émulateur VDA 5050 AGV
+│   ├── test_vda5050_emulator.py # Comportement du bridge face à l'émulateur VDA 5050 AGV
+│   ├── test_edge_cases.py       # Identifiants d'en-tête, horodatages, annulation immédiate et ordres non encodables
+│   ├── test_vda5050_schemas.py  # Chaque message construit par l'éditeur est valide selon les schémas JSON officiels de VDA 5050 2.0.0
+│   └── vda5050_schemas/         # Les schémas JSON officiels de VDA 5050 2.0.0, copiés sans modification (avec leur NOTICE)
 ├── tools/
 │   ├── build_test.py            # Compilateur + lanceur de tests non mutant (build-test.bat/.sh)
 │   ├── bump_version.py          # Synchronise pyproject.toml, manifeste et CHANGELOG.md
 │   ├── ci_validate.py           # Base CI sans dépendances et non destructive (utilisée par .github/workflows/ci.yml)
-│   └── inspect_order_plan.py    # Affiche le plan d'ordre statique (aucun transport ouvert)
+│   ├── inspect_order_plan.py    # Affiche le plan d'ordre statique (aucun transport ouvert)
+│   ├── _doc_policy.py           # Règles de documentation partagées par la famille (copie de celle de HYDRA-UMC-SDK, tenue synchronisée)
+│   ├── _readme_parity.py        # Contrôle que les huit README partagent la même structure (copie de celui de HYDRA-UMC-SDK, tenue synchronisée)
+│   ├── hydra_project_tool.py    # Les mêmes commandes dans chaque dépôt : validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # Les étapes de compilation propres à ce dépôt en plus du test de compilation partagé (ses tests unitaires)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Portée, plateformes compatibles, scripts, portail d'acceptation matérielle
 ├── images/

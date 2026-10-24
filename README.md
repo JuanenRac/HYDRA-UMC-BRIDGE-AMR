@@ -115,12 +115,19 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── test_observed_and_order_ids.py # Observed machine state and order ids that survive a restart
 │   ├── test_hardening.py        # Client id, broker answer, observer, wire names, header ids, finite JSON
 │   ├── vda5050_emulator.py      # Protocol-faithful VDA 5050 AGV emulator (realistic test double)
-│   └── test_vda5050_emulator.py # Bridge behaviour against the VDA 5050 AGV emulator
+│   ├── test_vda5050_emulator.py # Bridge behaviour against the VDA 5050 AGV emulator
+│   ├── test_edge_cases.py       # Header ids, timestamps, instant cancel and unencodable orders
+│   ├── test_vda5050_schemas.py  # Every message the publisher builds is valid against the official VDA 5050 2.0.0 JSON schemas
+│   └── vda5050_schemas/         # The official VDA 5050 2.0.0 JSON schemas, copied unchanged (with their NOTICE)
 ├── tools/
 │   ├── build_test.py            # Non-mutating compile + test runner (build-test.bat/.sh)
 │   ├── bump_version.py          # Synchronizes pyproject.toml, manifest and CHANGELOG.md
 │   ├── ci_validate.py           # Dependency-free, non-destructive CI baseline (used by .github/workflows/ci.yml)
-│   └── inspect_order_plan.py    # Prints the static order plan (no transport opened)
+│   ├── inspect_order_plan.py    # Prints the static order plan (no transport opened)
+│   ├── _doc_policy.py           # Documentation rules shared by the family (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   ├── _readme_parity.py        # Check that the eight READMEs share one structure (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   ├── hydra_project_tool.py    # The same commands in every repository: validate, test, ci, version, status, bump
+│   └── extra_build_steps.py     # The build steps of this repository beyond the shared build test (its own unit tests)
 ├── docs/
 │   └── BRIDGE_GUIDE.md          # Scope, compatible platforms, scripts, hardware acceptance gate
 ├── images/
