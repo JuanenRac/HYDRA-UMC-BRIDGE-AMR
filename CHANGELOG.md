@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.1.4] - A configurable hold
 
 - **The messages are checked against the official VDA 5050 2.0.0 JSON schemas** (`order` and `instantActions`, vendored under `tests/vda5050_schemas`; the `dev` extra installs `jsonschema`). The check found that an instant action lacked `actionName`, which the official instantActions schema requires: it is now sent next to `actionType`.
 - **A configurable hold.** `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` sends VDA 5050 `startPause` in the abort phase instead of `cancelOrder` (still the default); both are always forwarded whatever the cell state. `AmrCoordinator.abort_action=AmrCoordinator.ABORT_BOTH` sends `cancelOrder` and then `startPause` (`dispatch_all()` returns both), and `AmrCoordinator.resume()` builds `stopPause`, which is a motion: it is accepted only for a READY cell and a vehicle read as HOLDING, and refused when the state was not read. The phase table and the gate are the shared `PhaseCoordinator` of the SDK, which the UAV and droid bridges use too.
@@ -12,6 +12,10 @@ All notable changes to this project are documented here.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
 - The SDK is now fetched at a release tag instead of the main branch, so a change of the SDK cannot break this repository by itself.
 - The SDK is pinned to 0.3.6, whose gate refuses a productive order when the bridge did not read the state of its vehicle. `AmrCoordinator.dispatch()` is always given the state the AGV reported (`Vda5050Observer.machine_state()`); without it the order is refused. The claim written in the job message is no longer trusted, and the tests now pass the observed state explicitly and check the refusal when there is none.
+
+## [0.1.4]
+
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.1.3]
 
