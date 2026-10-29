@@ -1,6 +1,6 @@
 <!-- =============================================================================
-HYDRA-UMC-BRIDGE-AMR - AGV/AMR fleet bidirectional coordination bridge
-Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+HYDRA-UMC-BRIDGE-AMR - AMR/AGV coordination bridge
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 GPL-3.0-or-later - see LICENSE
 ============================================================================= -->
 
@@ -8,7 +8,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-BRIDGE-AMR banner" width="100%">
 </p>
 
-# 🚗 HYDRA-UMC-BRIDGE-AMR
+# 🚚 HYDRA-UMC-BRIDGE-AMR
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | 🇵🇹 <b>Português</b></p>
 
@@ -16,15 +16,20 @@ GPL-3.0-or-later - see LICENSE
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python 3.11+">
-  <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Fails Closed">
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
+  <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
+  <img src="https://img.shields.io/badge/Tests-110%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.1.4-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **Verificação de honestidade - o que realmente corre hoje:** a transformação de referenciais de coordenadas e a porta de trabalhos (o `AmrCoordinator`/`FrameTransform` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`) e a lógica de formato de mensagem/tópicos do VDA 5050 (o `Vda5050Publisher` de `mqtt_transport.py`) são reais e estão cobertas por 110 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, mais `test_vda5050_emulator.py`, que executa o bridge contra um emulador de AGV VDA 5050 escrito à mão e fiel ao protocolo, não contra um real). Nada disto foi exercitado contra um broker MQTT real, um cliente `paho-mqtt` real ou um AMR/gestor de frota físico: o próprio `FakeMqttClient` de `test_mqtt_transport.py` substitui por completo o `paho-mqtt` (nem sequer é preciso ter a biblioteca real instalada para estes testes passarem), e ainda não há comando `run` vivo porque não se escolheu nem validou nenhum transporte real de gestor de frota. Ver «Estado atual e próximos passos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora.
+> **Verificação de honestidade - o que realmente corre hoje:** a transformação de referenciais de coordenadas e a porta de trabalhos (o `AmrCoordinator`/`FrameTransform` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`) e a lógica de formato de mensagem/tópicos do VDA 5050 (o `Vda5050Publisher` de `mqtt_transport.py`) são reais e estão cobertas por 110 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, mais `test_vda5050_emulator.py`, que executa o bridge contra um emulador de AGV VDA 5050 escrito à mão e fiel ao protocolo, não contra um real). Nada disto foi exercitado contra um broker MQTT real, um cliente `paho-mqtt` real ou um AMR/gestor de frota físico: o próprio `FakeMqttClient` de `test_mqtt_transport.py` substitui por completo o `paho-mqtt` (nem sequer é preciso ter a biblioteca real instalada para estes testes passarem), e ainda não há comando `run` vivo porque não se escolheu nem validou nenhum transporte real de gestor de frota. Ver «Roteiro e limites conhecidos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora.
 
 > **Estado de segurança (safety e security):** este ecossistema não é um sistema de segurança certificado. Ainda não existe um caminho de E-STOP por hardware, nem limites ou interlocks impostos pelo firmware, nem um comando de movimento verificado; as imagens de firmware são verificadas com CRC32 e um HMAC-SHA256 de chave partilhada, não com uma assinatura assimétrica; TLS e TLS mútuo são opcionais e estão desativados por defeito; nenhuma placa própria foi ainda montada ou testada. Leia a [base de segurança](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) e o [modelo de ameaças](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) antes de confiar em qualquer afirmação aqui para a segurança de uma pessoa.
+
+---
 
 ## 📋 Num relance
 
@@ -32,9 +37,11 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versão | `0.1.4` |
 | Maturidade | Funcional |
-| Testes | 83 (`python tools/build_test.py`) |
+| Testes | 110 (`python tools/build_test.py`) |
 | Tecnologia | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | Em hardware real | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
+
+**Ir para:** [Visão geral](#-visão-geral) · [Arquitetura](#-arquitetura) · [Funcionalidades](#-funcionalidades) · [Segurança e proteção](#-segurança-e-proteção) · [Interfaces](#-interfaces) · [Configuração](#-configuração) · [Início rápido](#-início-rápido) · [Testes](#-testes) · [Resolução de problemas](#-resolução-de-problemas) · [Estrutura do repositório](#-estrutura-do-repositório) · [Projetos relacionados](#-projetos-relacionados)
 
 ## 🚦 Estado do projeto
 
@@ -45,32 +52,30 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Área | Estado | O que significa aqui |
 |---|---|---|
 | Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
-| Testes | 🟢 | 83 testes automáticos, executados a cada alteração |
+| Testes | 🟢 | 110 testes automáticos, executados a cada alteração |
 | Hardware real | 🟠 | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
 | Documentação | 🟢 | README em oito idiomas, verificado contra o manifesto a cada alteração |
 
-## 1. 🛠️ VISÃO TÉCNICA GERAL
+## 🎯 Visão geral
 
 O **HYDRA-UMC-BRIDGE-AMR** é a fronteira de coordenação bidirecional e de alto nível entre o HYDRA-UMC e uma frota de AGV/AMR (robôs móveis autónomos), acessível por Wi-Fi ou uma ligação celular (4G/5G). Faz exatamente duas coisas reais antes de um trabalho chegar a um AMR: resolve uma coordenada do referencial da fábrica no referencial local desse AMR concreto através de uma transformação rígida 2D real e verificável à mão, e associa uma fase do trabalho a uma ação de ordem mínima inspirada no VDA 5050. Não tem lógica própria de navegação, localização nem desvio de obstáculos e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP).
 
 Pertence à família de **Bridges móveis e autónomos**, ao lado do `HYDRA-UMC-BRIDGE-DROIDS` e do `HYDRA-UMC-BRIDGE-UAV`, e partilha o mesmo contrato de trabalho e segurança do `HYDRA-UMC-SDK` que os **Bridges de automação externa** fixos (CNC, LASER, OPENPNP, PRINTER3D, ROS2), de modo que nenhum bridge, móvel ou fixo, inventa a sua própria definição de «seguro para trabalhar».
 
-### Funcionalidades principais:
-* 🧾 **Esquemas VDA 5050 oficiais e retenção configurável:** os testes validam cada mensagem que a ponte constrói contra os esquemas JSON oficiais do VDA 5050 2.0.0 (`order` e `instantActions`, incluídos em `tests/vda5050_schemas`); uma ação instantânea leva agora `actionName` junto de `actionType`, porque o esquema oficial instantActions o pede. `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` faz a fase de aborto reter o veículo com `startPause` em vez de descartar a sua ordem com `cancelOrder` (o predefinido); ambas são sempre reencaminhadas. `MOVE_TO_HOME` passa pela mesma porta que qualquer movimento. `AmrCoordinator.resume()` envia `stopPause` apenas com a célula em READY e um veículo lido como em pausa, e `abort_action=AmrCoordinator.ABORT_BOTH` envia `cancelOrder` e depois `startPause`. *(implementado)*
-* ✅ **Transformação real de referenciais de coordenadas, verificável à mão:** `FrameTransform` converte um `(x, y)` do referencial da fábrica no referencial local de um AMR concreto, dada a origem/orientação real desse AMR no chão da fábrica; verificada com um caso de identidade, uma translação pura, uma rotação de orientação de 90 graus e um teste real de ida e volta. *(implementado, testado em `tests/test_coordinator.py`)*
-* ✅ **Vocabulário real de ações de ordem inspirado no VDA 5050, com a divisão real em dois canais:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` publicam-se no tópico `order` real do VDA 5050 (em fila, parte de um percurso); `CANCEL_ORDER` publica-se no tópico `instantActions` real e separado (imediato, não passa pela fila de ordens), de acordo com o nome real da ação `cancelOrder` do VDA 5050 E o seu canal real, verificado contra os [esquemas oficiais](https://github.com/VDA5050/VDA5050/tree/main/json_schemas). *(implementado)*
-* ✅ **Validação real de coordenadas por ação:** uma ação de movimento sem `x`/`y`, ou com um valor não numérico, é rejeitada localmente antes de a transformação sequer correr. *(implementado, testado)*
-* ✅ **Porta de segurança partilhada real:** cada trabalho despachado por `AmrCoordinator.dispatch()` é avaliado pelo `evaluate_job()` do `bridge_contract` do `HYDRA-UMC-SDK`, a mesma porta que usam todos os bridges irmãos e o HYDRA-UMC-SERVER; uma fase produtiva exige uma máquina externa `IDLE` e uma célula do HYDRA-UMC `READY`, enquanto `CANCEL_ORDER` continua a poder pedir-se durante uma falha. *(implementado)*
-* ✅ **Encaminhamento de fases com falha segura e evidência estática:** uma fase futura desconhecida do SDK é negada. `inspect_order_plan.py` emite o plano de ordens estático do esquema `1.1` (com a divisão real de canais `actions`/`instant_actions`) sem abrir nenhum transporte. *(implementado, testado)*
-* ✅ **Publicador MQTT VDA 5050 real:** o `Vda5050Publisher` de `mqtt_transport.py` envia um despacho já aprovado como mensagem real, com o formato da especificação, no tópico real correto (`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`); um despacho rejeitado nunca chega à rede. *(implementado, testado em `tests/test_mqtt_transport.py`)*
-* ✅ **Compilação/teste que não altera nada:** `build-test.bat`/`.sh` compilam o código-fonte e executam testes unitários deterministas sem alterar a versão nem o CHANGELOG. *(implementado, ver COMPILAR E EXECUTAR abaixo)*
-* 🔜 **Um adaptador REST/WebSocket específico de um gestor de frota** (para uma plataforma de frota que não seja nativa VDA 5050): só se introduzirá depois de se escolher e testar essa plataforma. *(planeado)*
-* ✅ **Estado observado da máquina e ids de ordem que sobrevivem a um reinício:** `AmrCoordinator.dispatch()` aceita o estado que o gestor de frota comunicou do veículo, que a porta partilhada usa em vez do `machine_state` escrito no trabalho (uma mensagem que qualquer pessoa no broker pode publicar); o `Vda5050Publisher` dá a cada ordem um `orderId` com um token próprio, para que um reinício que volte a contar o `headerId` desde o princípio não reutilize o id de uma ordem anterior (o VDA 5050 recusa-o). *(implementado, testado em `tests/test_observed_and_order_ids.py`)*
-* ✅ **Nomes VDA 5050 no fio, um cliente que o broker aceita e um observador que escuta:** os internos `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` saem como os tipos de ação VDA 5050, sensíveis a maiúsculas, `cancelOrder` / `pick` / `drop` (antes o `CANCEL_ORDER` saía tal e qual, e um AGV não o reconhece como cancelamento), e um movimento é apenas o seu nó de destino, sem um tipo de ação inventado; `actionId` e `nodeId` levam o token de sessão como o `orderId`; `header_id` e `timestamp_iso` podem ser omitidos (o publicador conta por tópico e põe a hora UTC) e são validados quando dados; uma coordenada que transborda, um número não finito ou um ponto fora de `FrameTransform.bounds` é recusado (`allow_nan=False`). O `open_mqtt_client()` recebe um `client_id` (o broker autentica pelo seu prefixo), usa a API de callbacks v2 e espera pela resposta do broker em vez de devolver um cliente que não consegue publicar; com um `Vda5050Observer` subscreve os tópicos `state` e `connection` do AGV e deriva o estado de máquina que a porta usa (OFFLINE se caducado, não ONLINE ou não em modo AUTOMATIC; caso contrário SAFE_STOP, FAULT, HOLDING, RUNNING ou IDLE). *(implementado, testado com dobles e com o emulador; nunca executado contra um AGV nem um gestor de frota reais, e uma rota que parta do nó onde o AGV está (dois nós e uma aresta, o que exige o grafo da fábrica) AINDA NÃO é construída, pelo que um AGV real recusará estas ordens de um só nó de destino)*
+## 🧩 Papel no HYDRA-UMC
 
----
+O **HYDRA-UMC-BRIDGE-AMR** coordena uma frota de AGV ou AMR com uma célula de robôs. Converte um trabalho de célula já validado numa ordem VDA 5050 (nunca movimento bruto) e lê de volta as mensagens `state` e `connection` do próprio veículo, para a porta saber se ele pode aceitar uma ordem.
 
-## 2. 🔄 FLUXO DE COORDENAÇÃO DO AMR
+Todos os bridges falam o contrato de segurança partilhado do `HYDRA-UMC-SDK`: um trabalho só é aceite quando a porta partilhada `evaluate_job()` o permite, e essa porta falha fechada. O projeto pai é o `HYDRA-UMC-SERVER`; este bridge não o chama, responde por MQTT, através do `HYDRA-UMC-MQTT-BROKER`, a quem comanda a célula.
+
+## 🏛️ Arquitetura
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-BRIDGE-AMR architecture" width="100%">
+</p>
+
+<details>
+<summary>Versão em texto do diagrama (Mermaid)</summary>
 
 ```mermaid
 flowchart LR
@@ -81,9 +86,9 @@ flowchart LR
     SDK -- GateDecision --> BRIDGE
 ```
 
----
+</details>
 
-## 3. 🧱 ARQUITETURA E DECISÕES DE DESENHO
+**Porque é construído assim**
 
 * **Porque aqui vive uma transformação real de referenciais e não apenas uma passagem direta.** As coordenadas da célula do HYDRA-UMC e o mapa local de um AMR qualquer raramente partilham origem ou orientação; a nota de arquitetura colada de que este projeto partiu di-lo expressamente («mapear coordenadas do mapa da fábrica para o mapa local do próprio robô»). `FrameTransform` é a matemática real e verificada à mão que fecha essa lacuna, mantida como trigonometria simples sem dependência de nenhum gestor de frota, de modo que se pode testar em qualquer lado.
 * **Porque o vocabulário de ações de ordem tem a forma do VDA 5050.** O VDA 5050 é o padrão real, aberto e neutro quanto a fabricantes de integração de frotas que várias frotas comerciais de AMR (e um número crescente de pilhas de código aberto) já falam; dar às ações deste repositório os nomes do seu vocabulário real (`CANCEL_ORDER`, movimento em forma de nó/ação) faz de um futuro adaptador VDA 5050 real um encaixe natural e não uma camada de tradução acrescentada à pressa.
@@ -92,59 +97,94 @@ flowchart LR
 * **Porque ainda não há neste repositório um adaptador específico de um fabricante para o gestor de frota.** (O publicador MQTT VDA 5050 existe, ver acima.) Comprometer-se com o protocolo REST/WebSocket real de um AMR antes de se escolher e testar uma frota real arriscaria fixar pressupostos que este núcleo local e sem dependências não consegue verificar.
 * **Como se encaixa no resto do ecossistema.** O BRIDGE-AMR fica entre uma frota de AMR real e o `HYDRA-UMC-SDK` → `HYDRA-UMC-SERVER` → segurança do MCU: é uma fronteira de coordenação, nunca um nó de navegação nem de controlo de motores, e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP).
 
----
+## ✨ Funcionalidades
 
-## 📂 ESTRUTURA DE DIRETORIAS
+* 🧾 **Esquemas VDA 5050 oficiais e retenção configurável:** os testes validam cada mensagem que a ponte constrói contra os esquemas JSON oficiais do VDA 5050 2.0.0 (`order` e `instantActions`, incluídos em `tests/vda5050_schemas`); uma ação instantânea leva agora `actionName` junto de `actionType`, porque o esquema oficial instantActions o pede. `AmrCoordinator(abort_action=AmrCoordinator.START_PAUSE)` faz a fase de aborto reter o veículo com `startPause` em vez de descartar a sua ordem com `cancelOrder` (o predefinido); ambas são sempre reencaminhadas. `MOVE_TO_HOME` passa pela mesma porta que qualquer movimento. `AmrCoordinator.resume()` envia `stopPause` apenas com a célula em READY e um veículo lido como em pausa, e `abort_action=AmrCoordinator.ABORT_BOTH` envia `cancelOrder` e depois `startPause`. *(implementado)*
+* ✅ **Transformação real de referenciais de coordenadas, verificável à mão:** `FrameTransform` converte um `(x, y)` do referencial da fábrica no referencial local de um AMR concreto, dada a origem/orientação real desse AMR no chão da fábrica; verificada com um caso de identidade, uma translação pura, uma rotação de orientação de 90 graus e um teste real de ida e volta. *(implementado, testado em `tests/test_coordinator.py`)*
+* ✅ **Vocabulário real de ações de ordem inspirado no VDA 5050, com a divisão real em dois canais:** `MOVE_TO_STAGING`, `PICK_LOAD`, `MOVE_TO_DESTINATION`, `DROP_LOAD`, `MOVE_TO_HOME` publicam-se no tópico `order` real do VDA 5050 (em fila, parte de um percurso); `CANCEL_ORDER` publica-se no tópico `instantActions` real e separado (imediato, não passa pela fila de ordens), de acordo com o nome real da ação `cancelOrder` do VDA 5050 E o seu canal real, verificado contra os [esquemas oficiais](https://github.com/VDA5050/VDA5050/tree/main/json_schemas). *(implementado)*
+* ✅ **Validação real de coordenadas por ação:** uma ação de movimento sem `x`/`y`, ou com um valor não numérico, é rejeitada localmente antes de a transformação sequer correr. *(implementado, testado)*
+* ✅ **Porta de segurança partilhada real:** cada trabalho despachado por `AmrCoordinator.dispatch()` é avaliado pelo `evaluate_job()` do `bridge_contract` do `HYDRA-UMC-SDK`, a mesma porta que usam todos os bridges irmãos e o HYDRA-UMC-SERVER; uma fase produtiva exige uma máquina externa `IDLE` e uma célula do HYDRA-UMC `READY`, enquanto `CANCEL_ORDER` continua a poder pedir-se durante uma falha. *(implementado)*
+* ✅ **Encaminhamento de fases com falha segura e evidência estática:** uma fase futura desconhecida do SDK é negada. `inspect_order_plan.py` emite o plano de ordens estático do esquema `1.1` (com a divisão real de canais `actions`/`instant_actions`) sem abrir nenhum transporte. *(implementado, testado)*
+* ✅ **Publicador MQTT VDA 5050 real:** o `Vda5050Publisher` de `mqtt_transport.py` envia um despacho já aprovado como mensagem real, com o formato da especificação, no tópico real correto (`{interfaceName}/{majorVersion}/{manufacturer}/{serialNumber}/{order|instantActions}`); um despacho rejeitado nunca chega à rede. *(implementado, testado em `tests/test_mqtt_transport.py`)*
+* ✅ **Compilação/teste que não altera nada:** `build-test.bat`/`.sh` compilam o código-fonte e executam testes unitários deterministas sem alterar a versão nem o CHANGELOG. *(implementado, ver Compilação e publicação abaixo)*
+* 🔜 **Um adaptador REST/WebSocket específico de um gestor de frota** (para uma plataforma de frota que não seja nativa VDA 5050): só se introduzirá depois de se escolher e testar essa plataforma. *(planeado)*
+* ✅ **Estado observado da máquina e ids de ordem que sobrevivem a um reinício:** `AmrCoordinator.dispatch()` aceita o estado que o gestor de frota comunicou do veículo, que a porta partilhada usa em vez do `machine_state` escrito no trabalho (uma mensagem que qualquer pessoa no broker pode publicar); o `Vda5050Publisher` dá a cada ordem um `orderId` com um token próprio, para que um reinício que volte a contar o `headerId` desde o princípio não reutilize o id de uma ordem anterior (o VDA 5050 recusa-o). *(implementado, testado em `tests/test_observed_and_order_ids.py`)*
+* ✅ **Nomes VDA 5050 no fio, um cliente que o broker aceita e um observador que escuta:** os internos `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` saem como os tipos de ação VDA 5050, sensíveis a maiúsculas, `cancelOrder` / `pick` / `drop` (antes o `CANCEL_ORDER` saía tal e qual, e um AGV não o reconhece como cancelamento), e um movimento é apenas o seu nó de destino, sem um tipo de ação inventado; `actionId` e `nodeId` levam o token de sessão como o `orderId`; `header_id` e `timestamp_iso` podem ser omitidos (o publicador conta por tópico e põe a hora UTC) e são validados quando dados; uma coordenada que transborda, um número não finito ou um ponto fora de `FrameTransform.bounds` é recusado (`allow_nan=False`). O `open_mqtt_client()` recebe um `client_id` (o broker autentica pelo seu prefixo), usa a API de callbacks v2 e espera pela resposta do broker em vez de devolver um cliente que não consegue publicar; com um `Vda5050Observer` subscreve os tópicos `state` e `connection` do AGV e deriva o estado de máquina que a porta usa (OFFLINE se caducado, não ONLINE ou não em modo AUTOMATIC; caso contrário SAFE_STOP, FAULT, HOLDING, RUNNING ou IDLE). *(implementado, testado com dobles e com o emulador; nunca executado contra um AGV nem um gestor de frota reais, e uma rota que parta do nó onde o AGV está (dois nós e uma aresta, o que exige o grafo da fábrica) AINDA NÃO é construída, pelo que um AGV real recusará estas ordens de um só nó de destino)*
 
-```text
-HYDRA-UMC-BRIDGE-AMR/
-├── src/
-│   └── hydra_umc_bridge_amr/
-│       ├── __init__.py
-│       ├── coordinator.py       # AmrCoordinator + FrameTransform: porta de ordens sem dependências
-│       ├── mqtt_transport.py    # Publicação MQTT VDA 5050 real - order/instantActions, só despacho aprovado
-│       ├── observer.py         # O que o AGV comunica em state/connection, como estado de máquina para a porta
-│       └── simulated_amr.py     # Tabela explícita de estados de ordem + AMR simulado: sem transporte, sem movimento real
-├── tests/
-│   ├── test_coordinator.py      # Testes unitários deterministas, incl. geometria verificável à mão
-│   ├── test_mqtt_transport.py   # Testes do formato de tópico/mensagem VDA 5050 contra um cliente MQTT falso
-│   ├── test_mqtt_environment.py # As credenciais MQTT e o TLS do ambiente do serviço chegam ao cliente
-│   ├── test_simulated_amr.py    # Testes da tabela de estados e do AMR simulado
-│   ├── test_observed_and_order_ids.py # Estado observado da máquina e ids de ordem que sobrevivem a um reinício
-│   ├── test_hardening.py        # Client id, resposta do broker, observador, nomes no fio, ids de cabeçalho, JSON finito
-│   ├── vda5050_emulator.py      # Emulador de AGV VDA 5050 fiel ao protocolo (dublê de teste realista)
-│   ├── test_vda5050_emulator.py # Comportamento do bridge contra o emulador de AGV VDA 5050
-│   ├── test_edge_cases.py       # Ids de cabeçalho, marcas de tempo, cancelamento imediato e ordens não codificáveis
-│   ├── test_vda5050_schemas.py  # Cada mensagem que o publicador constrói é válida face aos esquemas JSON oficiais da VDA 5050 2.0.0
-│   └── vda5050_schemas/         # Os esquemas JSON oficiais da VDA 5050 2.0.0, copiados sem alterações (com a sua NOTICE)
-├── tools/
-│   ├── build_test.py            # Executor de compilação + testes que não altera nada (build-test.bat/.sh)
-│   ├── bump_version.py          # Sincroniza pyproject.toml, o manifesto e CHANGELOG.md
-│   ├── ci_validate.py           # Base de CI sem dependências e não destrutiva (usada por .github/workflows/ci.yml)
-│   ├── inspect_order_plan.py    # Mostra o plano estático de ordens (sem abrir nenhum transporte)
-│   ├── _doc_policy.py           # Regras de documentação partilhadas pela família (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
-│   ├── _readme_parity.py        # Verificação de que os oito README partilham a mesma estrutura (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
-│   ├── hydra_project_tool.py    # Os mesmos comandos em todos os repositórios: validate, test, ci, version, status, bump
-│   └── extra_build_steps.py     # Os passos de compilação próprios deste repositório além do teste de compilação partilhado (os seus testes unitários)
-├── docs/
-│   └── BRIDGE_GUIDE.md          # Âmbito, plataformas compatíveis, scripts, porta de aceitação de hardware
-├── images/
-│   └── HYDRA_UMC_BANNER.svg     # Banner do README
-├── build-test.bat / build-test.sh  # Só valida, nunca modifica o repositório
-├── build.bat / build.sh            # Valida e compila (compilar nunca altera a versão)
-├── pyproject.toml               # Metadados do pacote; depende do HYDRA-UMC-SDK (git)
-├── hydra-umc.project.json       # Manifesto do ecossistema (versão, maturidade, família)
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md / CONTRIBUTING.md / SECURITY.md / SUPPORT.md
-├── LICENSE / LICENSE.md
-└── README.md / README_*.md      # Este ficheiro e as suas 7 traduções
+## 🔒 Segurança e proteção
+
+| Ameaça | Defesa | Onde |
+|---|---|---|
+| Um trabalho para uma célula ou máquina que não está em estado seguro | Todo o trabalho passa pela porta partilhada `evaluate_job()` do SDK, que falha fechada; o bridge não tem lógica própria de aceitar ou recusar | SDK `bridge_contract` |
+| Dados de trabalho desmesurados | No máximo 32 parâmetros, chaves até 64 carateres, valores até 1024, identificadores até 128 (`MAX_PARAMETERS`, `MAX_PARAMETER_KEY_CHARS`, `MAX_PARAMETER_VALUE_CHARS`, `MAX_IDENTIFIER_CHARS`) | SDK `bridge_contract` |
+| Uma ordem repetida ou reenviada | Um `IdempotencyStore` lembra cada chave durante 24 horas e no máximo 10 000 entradas; uma repetição recebe a primeira resposta em vez de ser avaliada de novo | SDK `job_intake` |
+| Uma ordem de movimento bruto enviada a um veículo | O coordenador só converte o trabalho numa ordem local do AMR; `simulated_amr.TRANSITIONS` diz que ação é legal a partir de que estado (por exemplo `MOVE_TO_STAGING` só a partir de `IDLE`) | `coordinator.py`, `simulated_amr.py` |
+| Uma mensagem VDA 5050 malformada | Cada mensagem `order` e `instantActions` que o publicador constrói é validada nos testes contra os esquemas JSON oficiais do VDA 5050 2.0.0, copiados sem alterações | `tests/test_vda5050_schemas.py` |
+| Um veículo que não pode aceitar uma ordem | Um envio recusado nunca chega à rede; o observador trata um `state` ou `connection` em falta ou antigo (mais de 90 segundos) como não pronto | `mqtt_transport.py`, `observer.py` |
+
+**O que nunca faz:** nunca envia movimento bruto e nunca correu contra um veículo ou gestor de frota reais.
+
+## 🔌 Interfaces
+
+Os tópicos VDA 5050 são `{interface_name}/{major_version}/{manufacturer}/{serial_number}/{channel}` (`Vda5050Target.topic()`), por exemplo `vda5050/v2/acme/agv-01/order`.
+
+| Tópico ou rota | O que leva |
+|---|---|
+| `order`, `instantActions` | são publicados; cada um tem o seu contador `header_id` e uma marca de tempo UTC |
+| `state`, `connection` | observados pelo `Vda5050Observer`; a subscrição é renovada a cada reconexão |
+
+A biblioteca: `AmrCoordinator`, `FrameTransform`, `Vda5050Publisher`, `Vda5050Target`, `Vda5050Observer`, `SimulatedAmr`, `open_mqtt_client()`. O ID de cliente MQTT predefinido é `hydra-umc-bridge-amr`.
+
+## ⚙️ Configuração
+
+| Variável | Predefinição | O que define |
+|---|---|---|
+| `HYDRA_MQTT_USERNAME` | nenhum | O nome de utilizador MQTT; o broker liga-o a um prefixo de ID de cliente |
+| `HYDRA_MQTT_PASSWORD` | nenhum | A palavra-passe; só vale em conjunto com o nome de utilizador |
+| `HYDRA_MQTT_PASSWORD_FILE` | nenhum | A palavra-passe lida de um ficheiro (segredo do Docker ou do systemd); ignorada se `HYDRA_MQTT_PASSWORD` estiver definida |
+| `HYDRA_MQTT_TLS_CA` | nenhum | O ficheiro da CA que assinou o certificado do broker: a ligação é TLS e o certificado é verificado |
+| `HYDRA_MQTT_TLS` | desativado | `1` ativa o TLS, verificado com as CA de confiança do sistema |
+| `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | nenhum | O certificado de cliente e a sua chave para um broker que exige TLS mútuo; são precisos os dois |
+
+Não há ficheiro de configuração: o broker, `interface_name`, `major_version`, `manufacturer`, `serial_number` e a ação de aborto (`cancelOrder`, `startPause` ou ambas) são argumentos dos construtores.
+
+## 🚀 Início rápido
+
+Requer Python 3.11 ou superior. Os testes e os scripts de compilação esperam o `HYDRA-UMC-SDK` clonado ao lado deste repositório (`../HYDRA-UMC-SDK`) ou indicado com `HYDRA_UMC_SDK_ROOT`.
+
+Experimente sem hardware (isto verifica todo o bridge com os seus emuladores e dublês de teste):
+
+```bash
+py -3 tools/build_test.py          # Windows
+python3 tools/build_test.py         # Linux, macOS
 ```
 
-Ver [`docs/BRIDGE_GUIDE.md`](docs/BRIDGE_GUIDE.md) para o âmbito completo e o modelo de funcionamento, as plataformas compatíveis, a tabela de scripts e a porta de aceitação de hardware a percorrer antes de apontar este bridge a uma frota real.
+Arrancar o serviço (não há um script de consola: o serviço é o `run_forever()` do transporte MQTT, que chama a partir do seu próprio código de arranque):
 
----
+```python
+from hydra_umc_bridge_amr import AmrCoordinator, FrameTransform, Vda5050Publisher, Vda5050Target, open_mqtt_client
+client = open_mqtt_client("192.168.0.180")        # connects; the credentials come from HYDRA_MQTT_*
+target = Vda5050Target("vda5050", "v2", "acme", "agv-01")
+dispatch = AmrCoordinator().dispatch(job, cell_state, FrameTransform(map_id="hall", origin_x=0.0, origin_y=0.0, heading_rad=0.0))
+Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected dispatch is never sent
+```
 
-## 4. ⚙️ COMPILAR E EXECUTAR
+O nome de utilizador, a palavra-passe e os ficheiros TLS vêm das variáveis `HYDRA_MQTT_*` (ver Configuração); o código acima não precisa de credenciais próprias.
+
+## 🧪 Testes
+
+110 casos `unittest` automáticos correm com `python tools/build_test.py` (que também compila cada módulo). Os testes não precisam de hardware, rede nem pacotes opcionais: os que precisariam de `paho-mqtt`, `pyserial` ou de uma biblioteca do fabricante usam um substituto ou são saltados se o pacote faltar.
+
+| Ficheiro de testes | Testes | O que cobre |
+|---|---|---|
+| `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | mapeamento de trabalho para ordem, transformação rígida de referencial, ids, casos limite |
+| `test_vda5050_schemas.py` | - | cada mensagem validada contra os esquemas oficiais VDA 5050 2.0.0 |
+| `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | o coordenador e o publicador reais contra um veículo VDA 5050 ao nível da forma no barramento MQTT |
+| `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_simulated_amr.py` | - | publicador contra um cliente MQTT simulado, credenciais do ambiente, entradas hostis, a tabela de estados |
+
+A CI executa `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que verifica o manifesto, os documentos, os oito README e as imagens, e corre os testes com uma cópia do SDK.
+
+## 🏗️ Compilação e publicação
 
 Requer Python 3.11+. `tools/build_test.py` espera o `HYDRA-UMC-SDK` extraído como diretoria irmã (`../HYDRA-UMC-SDK`) ou indicado pela variável de ambiente `HYDRA_UMC_SDK_ROOT`.
 
@@ -160,9 +200,52 @@ bash build.sh
 
 `build-test` compila com `py_compile` cada módulo em `src/` e executa a suíte `unittest` completa descoberta em `tests/` (todos os ficheiros `test_*.py` - 110 testes), de forma determinista, sem ligação a nenhum AMR real, sem rede e sem alteração de versão/CHANGELOG. `build` executa primeiro essa mesma validação e, só se correr bem, chama `tools/bump_version.py` para sincronizar a versão em `pyproject.toml`, `hydra-umc.project.json` e `CHANGELOG.md`. Ainda não há comando `run` de hardware vivo: exige um adaptador de transporte de gestor de frota validado e um AMR/frota real.
 
----
+## 🩺 Resolução de problemas
 
-## ✅ Estado atual e próximos passos
+| Vê | Porque | Faça |
+|---|---|---|
+| `ModuleNotFoundError: hydra_umc_sdk` | O SDK não está instalado nem ao lado deste repositório | Clone o `HYDRA-UMC-SDK` ao lado deste repositório ou defina `HYDRA_UMC_SDK_ROOT` |
+| `paho-mqtt is not installed` | O cliente MQTT é um extra opcional | `pip install ".[mqtt]"` (precisa de `paho-mqtt` 2.1 ou superior, inferior a 3) |
+| `password was given without a username` | As credenciais MQTT precisam das duas partes | Defina também `HYDRA_MQTT_USERNAME`, não só a palavra-passe |
+| `could not reach the MQTT broker after N attempts` | O broker está em baixo, o endereço está errado ou a porta está fechada | Arranque o `HYDRA-UMC-MQTT-BROKER` e verifique o anfitrião e a porta dados ao transporte (5 tentativas com 2 segundos de intervalo); uma falha do handshake TLS não é repetida |
+| `the MQTT broker refused the connection` | O broker recusou a credencial (ou não respondeu a tempo) | Verifique `HYDRA_MQTT_USERNAME` e a palavra-passe; o ID de cliente tem de começar pelo prefixo que o broker ligou à credencial |
+| `"allowed": false` + `reason` | A porta partilhada ou uma guarda recusou a ordem | Leia `reason` e corrija a causa; não repita às cegas |
+
+## 📂 Estrutura do repositório
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-BRIDGE-AMR" width="100%">
+</p>
+
+<details>
+<summary>Versão em texto da árvore</summary>
+
+```text
+HYDRA-UMC-BRIDGE-AMR/
+├── src/hydra_umc_bridge_amr/
+│   ├── coordinator.py             converte um trabalho numa ordem local do AMR, nunca movimento bruto; FrameTransform
+│   ├── mqtt_transport.py          publicador VDA 5050 e o cliente MQTT
+│   ├── observer.py                transforma `state` e `connection` do AGV num estado de máquina
+│   └── simulated_amr.py           tabela de que ação é legal a partir de que estado
+├── tests/                         110 testes, com um emulador VDA 5050 e os esquemas oficiais
+├── docs/                          guia do bridge
+├── tools/                         executor de compilação e testes, subida de versão, validador de CI, geradores e verificações de README e imagens
+├── images/                        faixa e imagens do README
+├── .github/                       fluxo de CI e modelos de questões
+├── pyproject.toml                 metadados do pacote e dependências
+├── hydra-umc.project.json         manifesto: versão, maturidade, família
+├── CHANGELOG.md                   o que mudou em cada versão
+├── build.sh build.bat             scripts de compilação (nunca mudam a versão)
+├── build-test.sh build-test.bat   scripts de compilação (nunca mudam a versão)
+├── test.sh test.bat               executam os testes
+└── SECURITY.md SUPPORT.md CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE LICENSE.md
+```
+
+</details>
+
+## 🗺️ Roteiro e limites conhecidos
+
+**Limites conhecidos hoje**
 
 **Real hoje:** versão `0.1.4`, funcional como núcleo de coordenação sem dependências (`AmrCoordinator`) com uma transformação real de referenciais verificada à mão (`FrameTransform`), encaminhamento de fases com falha segura, um esquema estático de ordens `plan-only` com a divisão real de canais order/instantActions do VDA 5050, um publicador MQTT VDA 5050 real (`Vda5050Publisher`) e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
 
@@ -170,7 +253,9 @@ bash build.sh
 
 **Ainda por fazer:** ainda não se validou nenhum transporte real de gestor de frota (VDA 5050, REST/WebSocket de um fabricante) nem nenhum AMR físico: um adaptador real só se introduzirá depois de se escolher e testar uma plataforma de frota concreta.
 
----
+## 🌍 Idiomas
+
+Este README e os documentos do repositório existem em oito idiomas: inglês, espanhol, alemão, francês, italiano, japonês, chinês e português (Portugal). São escritos em conjunto e a CI verifica que os oito ficheiros têm as mesmas secções e as mesmas ligações. Este repositório não tem ecrã nem catálogo de mensagens próprios, por isso não há textos de interface para traduzir.
 
 ## 🔗 Projetos relacionados
 
@@ -265,21 +350,27 @@ Este projeto faz parte do ecossistema de robótica HYDRA-UMC do mesmo autor (Jua
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — coordenador de incidentes de manutenção: um papel de borda de poucos privilégios recolhe um inventário/estado higienizado, um papel de plano de controlo mostra-o só de leitura e pede a um fornecedor de IA que sugira um diagnóstico; nunca aplica um patch nem implanta nada.
 - **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — anfitrião de desenvolvimento reproduzível (Raspberry Pi 5 / CM5) que guarda o código-fonte do ecossistema e executa tarefas limitadas de compilação/teste numa fila durável; um papel de desenvolvimento dedicado, explicitamente não um CM5 operacional.
 
----
+## 📚 Documentação
 
-## 📚 Documentação e comunidade
+Onde ler mais:
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — pilha tecnológica e diretrizes de código para um pull request.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — as normas de comportamento esperadas nesta comunidade.
-- **[SECURITY.md](SECURITY.md)** — como comunicar uma vulnerabilidade e as áreas de segurança em que este projeto se concentra.
-- **[SUPPORT.md](SUPPORT.md)** — onde fazer perguntas e comunicar erros.
-- **[LICENSE.md](LICENSE.md)** — a licença deste projeto.
+* [docs/BRIDGE_GUIDE.md](docs/BRIDGE_GUIDE.md) - âmbito, as mensagens VDA 5050, referenciais, scripts
+* [Base de segurança do ecossistema](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [Modelo de ameaças do ecossistema](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [Registo de alterações deste repositório](CHANGELOG.md)
+* [Licença deste repositório](LICENSE.md)
+
+## 🤝 Contribuir e comunidade
+
+* Antes de um pull request execute `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py` (ou `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`): tem de imprimir `CI_VALIDATION=PASS`. Não execute `build.sh` nem `build.bat` para esta verificação; compilar não é verificar.
+* Os oito README são escritos a partir de uma única fonte em HYDRA-UMC-DOCS; não os edite à mão. Altere a fonte e escreva-os de novo com `tools/make_readmes.py`.
+* Não afirme num README o que não foi executado: diga «simulado» ou «não testado em hardware» quando for a verdade.
+* Consulte [CONTRIBUTING.md](CONTRIBUTING.md), o [código de conduta](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md) e [SUPPORT.md](SUPPORT.md).
 
 ## 👤 AUTOR
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 LICENÇA
-GPL-3.0-or-later - consulte LICENSE para mais detalhes.
 
+GPL-3.0-or-later - [LICENSE](LICENSE).

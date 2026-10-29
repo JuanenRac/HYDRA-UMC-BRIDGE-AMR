@@ -1,0 +1,129 @@
+{
+  "repo": "HYDRA-UMC-BRIDGE-AMR",
+  "ecosystem": "hydra",
+  "tagline": "A cell job becomes a VDA 5050 order for an AGV, after the shared gate has said yes.",
+  "description": "HYDRA-UMC-BRIDGE-AMR maps a correlated cell job onto an AMR-local order with a frame transform, asks the shared evaluate_job gate of HYDRA-UMC-SDK, publishes the accepted order as a VDA 5050 MQTT message and reads the state and connection messages of the vehicle back to know whether it can take an order.",
+  "columns": [
+    "WHO USES IT",
+    "THIS REPOSITORY",
+    "WHAT IT DEPENDS ON"
+  ],
+  "nodes": [
+    {
+      "id": "sdk",
+      "column": 0,
+      "level": "contract",
+      "title": "HYDRA-UMC-SDK",
+      "lines": [
+        "evaluate_job(): the gate",
+        "every bridge shares"
+      ]
+    },
+    {
+      "id": "cell",
+      "column": 0,
+      "level": "external",
+      "title": "Robot cell job",
+      "lines": [
+        "BridgeJob with a",
+        "correlation id"
+      ]
+    },
+    {
+      "id": "coord",
+      "column": 1,
+      "level": "contract",
+      "title": "coordinator.py",
+      "lines": [
+        "AmrCoordinator: job to AMR-",
+        "local order, FrameTransform"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_amr/coordinator.py::class AmrCoordinator"
+      ]
+    },
+    {
+      "id": "pub",
+      "column": 1,
+      "level": "tested",
+      "title": "mqtt_transport.py",
+      "lines": [
+        "Vda5050Publisher: order and",
+        "instantActions messages"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_amr/mqtt_transport.py::class Vda5050Publisher"
+      ]
+    },
+    {
+      "id": "obs",
+      "column": 1,
+      "level": "tested",
+      "title": "observer.py",
+      "lines": [
+        "state and connection of the",
+        "AGV become a machine state"
+      ],
+      "code": [
+        "src/hydra_umc_bridge_amr/observer.py::class Vda5050Observer"
+      ]
+    },
+    {
+      "id": "agv",
+      "column": 2,
+      "level": "untested",
+      "title": "AGV / AMR fleet",
+      "lines": [
+        "VDA 5050 over MQTT; never",
+        "run against a real vehicle"
+      ]
+    },
+    {
+      "id": "broker",
+      "column": 2,
+      "level": "external",
+      "title": "MQTT broker",
+      "lines": [
+        "carries the VDA 5050",
+        "topics"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "sdk",
+      "to": "coord",
+      "label": "gate",
+      "level": "contract"
+    },
+    {
+      "from": "cell",
+      "to": "coord",
+      "label": "job",
+      "level": "tested"
+    },
+    {
+      "from": "coord",
+      "to": "pub",
+      "level": "tested"
+    },
+    {
+      "from": "pub",
+      "to": "obs",
+      "level": "tested"
+    },
+    {
+      "from": "pub",
+      "to": "broker",
+      "label": "order",
+      "level": "tested"
+    },
+    {
+      "from": "broker",
+      "to": "agv",
+      "label": "VDA 5050",
+      "level": "untested"
+    }
+  ],
+  "footer": "No real AMR was connected: the publisher and the observer met an emulator and the official schemas only."
+}
