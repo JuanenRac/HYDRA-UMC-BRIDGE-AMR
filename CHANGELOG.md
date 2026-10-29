@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
+
 ## [0.1.4] - A configurable hold
 
 - **The messages are checked against the official VDA 5050 2.0.0 JSON schemas** (`order` and `instantActions`, vendored under `tests/vda5050_schemas`; the `dev` extra installs `jsonschema`). The check found that an instant action lacked `actionName`, which the official instantActions schema requires: it is now sent next to `actionType`.
