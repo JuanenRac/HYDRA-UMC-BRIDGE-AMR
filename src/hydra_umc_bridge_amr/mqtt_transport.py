@@ -32,13 +32,12 @@ from __future__ import annotations
 import json
 import logging
 import secrets
-import ssl
 import threading
-import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Protocol
 
+from hydra_umc_sdk.bridge_transport import connect_with_retry
 from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
 
 from .coordinator import AmrCoordinator, AmrDispatch
@@ -66,39 +65,6 @@ class MqttPublisher(Protocol):
     """The minimal real interface this module depends on - matches paho-mqtt's Client.publish()."""
 
     def publish(self, topic: str, payload: str) -> object: ...
-
-
-def connect_with_retry(
-    connect,
-    *,
-    max_attempts: int = 5,
-    retry_delay_seconds: float = 2.0,
-    sleep=time.sleep,
-) -> None:
-    """Retries `connect()` on OSError (what an unreachable broker actually
-    raises - connection refused, timeout), tolerating the real startup
-    race a systemd unit for this bridge hits if it starts before
-    HYDRA-UMC-MQTT-BROKER is listening yet (both are independent systemd
-    units with no ordering guarantee across a real reboot). Only OSError is retried;
-    anything else is a real bug, not a transient startup race, and
-    propagates immediately. A TLS error (an invalid certificate) will not get
-    better by waiting: it gives up at once. `sleep` is injectable so tests can
-    prove the retry/give-up behavior without a real multi-second wait."""
-    last_error: OSError | None = None
-    for attempt in range(1, max_attempts + 1):
-        try:
-            connect()
-            return
-        except ssl.SSLError as error:
-            raise RuntimeError(f"the TLS handshake with the MQTT broker failed, not retrying: {error}") from error
-        except OSError as error:
-            last_error = error
-            if attempt < max_attempts:
-                sleep(retry_delay_seconds)
-    raise RuntimeError(
-        f"could not reach the MQTT broker after {max_attempts} attempts "
-        f"({retry_delay_seconds}s apart): {last_error}"
-    ) from last_error
 
 
 def open_mqtt_client(
