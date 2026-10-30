@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.5] - The first MQTT connect retried as in the shared SDK and the universal README
+
 - **The retry of the first MQTT connect is the one of the shared SDK:** the bridge no longer carries its own copy of `connect_with_retry` (the other bridges already use `hydra_umc_sdk.bridge_transport`); the name is still exported by the package and behaves the same. The VDA 5050 client itself stays here: it waits for the broker's answer, subscribes to the state topics of the AGV and has no command topic, which the shared client does not cover.
 - **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree. Where the repository has a service or an MQTT transport, the README now says how to start it and which environment variables it reads.
 
