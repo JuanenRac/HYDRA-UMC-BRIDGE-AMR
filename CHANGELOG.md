@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The size of what the observer parses can be capped:** `HYDRA_UMC_AMR_MAX_STATE_BYTES` (or the `max_message_bytes` argument of `Vda5050Observer`) makes the observer ignore a `state` or `connection` message larger than that, before parsing it, like any unreadable message. Unset, there is no cap, as before.
+
 ## [0.1.5] - The first MQTT connect retried as in the shared SDK and the universal README
 
 - **The retry of the first MQTT connect is the one of the shared SDK:** the bridge no longer carries its own copy of `connect_with_retry` (the other bridges already use `hydra_umc_sdk.bridge_transport`); the name is still exported by the package and behaves the same. The VDA 5050 client itself stays here: it waits for the broker's answer, subscribes to the state topics of the AGV and has no command topic, which the shared client does not cover.

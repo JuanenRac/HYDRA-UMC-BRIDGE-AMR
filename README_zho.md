@@ -145,6 +145,7 @@ VDA 5050 主题为 `{interface_name}/{major_version}/{manufacturer}/{serial_numb
 | `HYDRA_MQTT_TLS_CA` | 无 | 签署代理证书的 CA 文件：连接使用 TLS 并验证证书 |
 | `HYDRA_MQTT_TLS` | 关闭 | `1` 启用 TLS，并用系统信任的 CA 验证 |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | 无 | 用于要求双向 TLS 的代理的客户端证书及其密钥；两者都需要 |
+| `HYDRA_UMC_AMR_MAX_STATE_BYTES` | 无（不设上限） | 观察者解析的 `state` 或 `connection` 消息的最大字节数；更大的消息像任何无法读取的消息一样被忽略 |
 
 没有配置文件：代理、`interface_name`、`major_version`、`manufacturer`、`serial_number` 和中止动作（`cancelOrder`、`startPause` 或两者）都是构造函数的参数。
 

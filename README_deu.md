@@ -145,6 +145,7 @@ Die Bibliothek: `AmrCoordinator`, `FrameTransform`, `Vda5050Publisher`, `Vda5050
 | `HYDRA_MQTT_TLS_CA` | keiner | Die CA-Datei, die das Zertifikat des Brokers signiert hat: Die Verbindung ist TLS und das Zertifikat wird geprüft |
 | `HYDRA_MQTT_TLS` | aus | `1` schaltet TLS ein, geprüft gegen die vertrauenswürdigen CAs des Systems |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | keiner | Das Clientzertifikat und sein Schlüssel für einen Broker mit gegenseitigem TLS; beide sind nötig |
+| `HYDRA_UMC_AMR_MAX_STATE_BYTES` | keiner (keine Obergrenze) | Die größte `state`- oder `connection`-Nachricht in Bytes, die der Beobachter auswertet; eine größere wird wie jede unlesbare Nachricht ignoriert |
 
 Es gibt keine Konfigurationsdatei: Broker, `interface_name`, `major_version`, `manufacturer`, `serial_number` und die Abbruchaktion (`cancelOrder`, `startPause` oder beide) sind Argumente der Konstruktoren.
 

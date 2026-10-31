@@ -28,6 +28,7 @@ fleet manager, only against the emulator in tests/.
 from __future__ import annotations
 
 import json
+import os
 import threading
 import time
 from typing import Callable
@@ -37,6 +38,8 @@ from hydra_umc_sdk.bridge_contract import MachineState
 from .mqtt_transport import Vda5050Target
 
 _DEFAULT_MAX_AGE_SECONDS = 90.0
+# Environment variable that caps the size of one `state` or `connection` message the observer will parse (bytes). Unset: no cap, as before.
+MAX_MESSAGE_BYTES_ENV = "HYDRA_UMC_AMR_MAX_STATE_BYTES"
 _ACTIVE_ACTION_STATUSES = {"WAITING", "INITIALIZING", "RUNNING", "PAUSED"}
 
 
@@ -49,7 +52,22 @@ class Vda5050Observer:
         *,
         max_age_seconds: float = _DEFAULT_MAX_AGE_SECONDS,
         clock: Callable[[], float] = time.monotonic,
+        max_message_bytes: int | None = None,
     ) -> None:
+        """`max_message_bytes` caps the size of one message that is parsed; a larger one is ignored like any unreadable message. None reads
+        `HYDRA_UMC_AMR_MAX_STATE_BYTES`, and without it there is no cap (the behaviour before the option existed)."""
+        if max_message_bytes is None:
+            raw = os.environ.get(MAX_MESSAGE_BYTES_ENV, "").strip()
+            if raw:
+                try:
+                    max_message_bytes = int(raw)
+                except ValueError:
+                    raise ValueError(f"{MAX_MESSAGE_BYTES_ENV} must be a positive whole number of bytes") from None
+        if max_message_bytes is not None and (
+            not isinstance(max_message_bytes, int) or isinstance(max_message_bytes, bool) or max_message_bytes <= 0
+        ):
+            raise ValueError("max_message_bytes must be a positive whole number of bytes")
+        self._max_message_bytes = max_message_bytes
         if not isinstance(max_age_seconds, (int, float)) or isinstance(max_age_seconds, bool) or not max_age_seconds > 0:
             raise ValueError("max_age_seconds must be a positive number of seconds")
         self._target = target
@@ -76,6 +94,8 @@ class Vda5050Observer:
         """Take one message of the AGV's topics. Anything unreadable is ignored: it can only make the AGV look less known."""
         if topic not in (self.state_topic, self.connection_topic):
             return
+        if self._max_message_bytes is not None and len(payload) > self._max_message_bytes:
+            return  # larger than the configured cap: never parsed
         try:
             body = json.loads(payload)
         except Exception:  # noqa: BLE001 - invalid JSON, deep nesting, bad encoding: not a message

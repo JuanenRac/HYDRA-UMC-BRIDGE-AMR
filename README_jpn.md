@@ -145,6 +145,7 @@ VDA 5050 のトピックは `{interface_name}/{major_version}/{manufacturer}/{se
 | `HYDRA_MQTT_TLS_CA` | なし | ブローカーの証明書に署名した CA のファイル。接続は TLS になり、証明書が検証されます |
 | `HYDRA_MQTT_TLS` | オフ | `1` で TLS を有効にし、システムの信頼する CA で検証します |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | なし | 相互 TLS を求めるブローカー用のクライアント証明書とその鍵。両方が必要です |
+| `HYDRA_UMC_AMR_MAX_STATE_BYTES` | なし（上限なし） | オブザーバーが解析する `state` または `connection` メッセージの最大サイズ（バイト）。これより大きいものは読めないメッセージと同様に無視されます |
 
 設定ファイルはありません。ブローカー、`interface_name`、`major_version`、`manufacturer`、`serial_number`、中止動作（`cancelOrder`、`startPause`、または両方）はコンストラクターの引数です。
 
