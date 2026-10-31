@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The MQTT client is tested against a real broker:** `tests/test_broker_integration.py` starts a `HYDRA-UMC-MQTT-BROKER` on a free local port and covers an order published through the client, the retained state and connection of the vehicle and its last will followed by the observer, and the way back (resubscription and publishing) after the broker went down and up. It skips itself when node, `paho-mqtt` or the installed broker (`HYDRA_UMC_TEST_BROKER_DIR`, default the folder next to this one) are missing.
+
 - **The size of what the observer parses can be capped:** `HYDRA_UMC_AMR_MAX_STATE_BYTES` (or the `max_message_bytes` argument of `Vda5050Observer`) makes the observer ignore a `state` or `connection` message larger than that, before parsing it, like any unreadable message. Unset, there is no cap, as before.
 
 ## [0.1.5] - The first MQTT connect retried as in the shared SDK and the universal README

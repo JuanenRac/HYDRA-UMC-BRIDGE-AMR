@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-110%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-122%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **Comprobación de honestidad - qué funciona realmente hoy:** la transformación de marco de coordenadas y la puerta de trabajos (`coordinator.py` con `AmrCoordinator`/`FrameTransform`, que hace pasar cada despacho por el propio `evaluate_job()` de `HYDRA-UMC-SDK`) y la lógica de forma de mensaje/topic VDA 5050 (`mqtt_transport.py` con `Vda5050Publisher`) son reales y están cubiertas por 110 tests unitarios que pasan (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, más `test_vda5050_emulator.py`, que ejecuta el bridge contra un emulador de AGV VDA 5050 fiel al protocolo pero escrito a mano, no uno real en producción). Nada de esto se ha probado contra un broker MQTT real, un cliente `paho-mqtt` real, o un AMR/gestor de flota físico - el propio `FakeMqttClient` de `test_mqtt_transport.py` sustituye a `paho-mqtt` por completo (la librería real ni siquiera necesita estar instalada para que estos tests pasen), y todavía no existe un comando `run` en vivo porque no se ha seleccionado ni validado ningún transporte real de gestor de flota. Ver "Estado actual y próximos pasos" más abajo, que ya lo indica con claridad, y `CHANGELOG.md` para lo que se ha entregado exactamente hasta ahora.
+> **Comprobación de honestidad - qué funciona realmente hoy:** la transformación de marco de coordenadas y la puerta de trabajos (`coordinator.py` con `AmrCoordinator`/`FrameTransform`, que hace pasar cada despacho por el propio `evaluate_job()` de `HYDRA-UMC-SDK`) y la lógica de forma de mensaje/topic VDA 5050 (`mqtt_transport.py` con `Vda5050Publisher`) son reales y están cubiertas por 122 tests unitarios que pasan (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, más `test_vda5050_emulator.py`, que ejecuta el bridge contra un emulador de AGV VDA 5050 fiel al protocolo pero escrito a mano, no uno real en producción). Nada de esto se ha probado contra un broker MQTT real, un cliente `paho-mqtt` real, o un AMR/gestor de flota físico - el propio `FakeMqttClient` de `test_mqtt_transport.py` sustituye a `paho-mqtt` por completo (la librería real ni siquiera necesita estar instalada para que estos tests pasen), y todavía no existe un comando `run` en vivo porque no se ha seleccionado ni validado ningún transporte real de gestor de flota. Ver "Estado actual y próximos pasos" más abajo, que ya lo indica con claridad, y `CHANGELOG.md` para lo que se ha entregado exactamente hasta ahora. Su cliente MQTT también se ha ejecutado contra un HYDRA-UMC-MQTT-BROKER real en una máquina de desarrollo (`tests/test_broker_integration.py`, que se omite si no hay ningún broker instalado): una orden publicada a través de él, el estado y la conexión retenidos del vehículo y su último testamento seguidos por el observador, y la vuelta tras caerse y levantarse el broker.
 
 > **Estado de seguridad física y de ciberseguridad:** este ecosistema no es un sistema de seguridad certificado. Todavía no existe una ruta de E-STOP por hardware, ni límites ni enclavamientos aplicados por el firmware, ni un comando de movimiento verificado; las imágenes de firmware se comprueban con CRC-32 y una firma Ed25519, y una compilación de versión rechaza las claves de desarrollo publicadas (los cabezales de herramienta y las placas de expansión detrás del relé siguen con cargadores de URTC, que usan un HMAC-SHA256 de clave compartida en lugar de una firma); TLS y TLS mutuo son opcionales y están desactivados por defecto; aún no se ha poblado ni probado ninguna placa propia. Lee la [línea base de seguridad](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) y el [modelo de amenazas](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) antes de fiarte de cualquier afirmación de aquí para la seguridad de una persona.
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versión | `0.1.5` |
 | Madurez | Funcional |
-| Tests | 110 (`python tools/build_test.py`) |
+| Tests | 122 (`python tools/build_test.py`) |
 | Tecnología | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | En hardware real | Solo simulado: probado con emuladores, dobles de prueba o simuladores; no consta ninguna ejecución en hardware real para esta versión |
 
@@ -52,7 +52,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Área | Estado | Qué significa aquí |
 |---|---|---|
 | Software | 🟡 | Funciona para su propósito principal; la comprobación de honestidad de arriba lista lo que aún falta |
-| Pruebas | 🟢 | 110 pruebas automáticas, ejecutadas en cada cambio |
+| Pruebas | 🟢 | 122 pruebas automáticas, ejecutadas en cada cambio |
 | Hardware real | 🟠 | Solo simulado: probado con emuladores, dobles de prueba o simuladores; no consta ninguna ejecución en hardware real para esta versión |
 | Documentación | 🟢 | README en ocho idiomas, comprobado contra el manifiesto en cada cambio |
 
@@ -174,7 +174,7 @@ El usuario, la contraseña y los ficheros TLS salen de las variables `HYDRA_MQTT
 
 ## 🧪 Pruebas
 
-110 casos automáticos de `unittest` se ejecutan con `python tools/build_test.py` (que también compila cada módulo). Las pruebas no necesitan hardware, red ni paquetes opcionales: las que necesitarían `paho-mqtt`, `pyserial` o una biblioteca del fabricante usan un sustituto o se saltan si falta el paquete.
+122 casos automáticos de `unittest` se ejecutan con `python tools/build_test.py` (que también compila cada módulo). Las pruebas no necesitan hardware, red ni paquetes opcionales: las que necesitarían `paho-mqtt`, `pyserial` o una biblioteca del fabricante usan un sustituto o se saltan si falta el paquete.
 
 | Fichero de pruebas | Pruebas | Qué cubre |
 |---|---|---|
@@ -199,7 +199,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` compila cada módulo bajo `src/` con `py_compile` y ejecuta la suite completa de `unittest` descubierta en `tests/` (todos los ficheros `test_*.py` - 110 tests) - de forma determinista, sin conexión real a ningún AMR, sin red y sin cambio de versión/CHANGELOG. `build` ejecuta esa misma validación primero y, solo si tiene éxito, llama a `tools/bump_version.py` para sincronizar la versión entre `pyproject.toml`, `hydra-umc.project.json` y `CHANGELOG.md`. Todavía no existe un comando `run` con hardware real - eso requiere un adaptador de transporte de gestor de flota validado y una flota AMR real.
+`build-test` compila cada módulo bajo `src/` con `py_compile` y ejecuta la suite completa de `unittest` descubierta en `tests/` (todos los ficheros `test_*.py` - 122 tests) - de forma determinista, sin conexión real a ningún AMR, sin red y sin cambio de versión/CHANGELOG. `build` ejecuta esa misma validación primero y, solo si tiene éxito, llama a `tools/bump_version.py` para sincronizar la versión entre `pyproject.toml`, `hydra-umc.project.json` y `CHANGELOG.md`. Todavía no existe un comando `run` con hardware real - eso requiere un adaptador de transporte de gestor de flota validado y una flota AMR real.
 
 ## 🩺 Resolución de problemas
 

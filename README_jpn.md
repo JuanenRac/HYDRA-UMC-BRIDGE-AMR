@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-110%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-122%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、110件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。
+> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、122件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。 MQTT クライアントは、開発用マシン上の本物の HYDRA-UMC-MQTT-BROKER に対しても実行されています(`tests/test_broker_integration.py`。ブローカーが未インストールの場合はスキップされます)。クライアント経由で発行したオーダー、オブザーバーが追跡する車両の保持された状態と接続およびそのラストウィル、ブローカーが停止して再起動した後の復帰を確認しています。
 
 > **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC-32 と Ed25519 署名で検査し、リリースビルドは公開済みの開発用鍵を拒否します(リレーの先のツールヘッドと拡張ボードは引き続き URTC のブートローダーを使い、署名ではなく共有鍵の HMAC-SHA256 を使います)。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.5` |
 | 成熟度 | 機能する |
-| テスト | 110 (`python tools/build_test.py`) |
+| テスト | 122 (`python tools/build_test.py`) |
 | 技術 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | 実機での確認 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 110 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 122 件。変更のたびに実行されます |
 | 実機 | 🟠 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
 
@@ -174,7 +174,7 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 
 ## 🧪 テスト
 
-`python tools/build_test.py` で自動 `unittest` 110 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
+`python tools/build_test.py` で自動 `unittest` 122 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
 
 | テストファイル | テスト数 | 対象 |
 |---|---|---|
@@ -199,7 +199,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(すべての `test_*.py` - 110件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
+`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(すべての `test_*.py` - 122件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
 
 ## 🩺 トラブルシューティング
 
