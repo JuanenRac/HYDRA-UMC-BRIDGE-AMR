@@ -180,6 +180,8 @@ The user name, the password and the TLS files come from the `HYDRA_MQTT_*` varia
 
 | Test file | Tests | What it covers |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | the global-stop guard and its refusals with the reason, and the same against a real broker on a free local port (the announcement at QoS 0, 1 and 2, a retained stop obeyed at connect, an unreadable one failing closed) |
+| `test_broker_integration.py`, `broker_harness.py` | - | the MQTT client against a real HYDRA-UMC-MQTT-BROKER on a free local port: an order through the client, the retained state and last will, and the way back after the broker went down and up; it skips itself when Node.js, `paho-mqtt` or the installed broker (`HYDRA_UMC_TEST_BROKER_DIR`, by default the folder next to this one) are missing |
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | job to order mapping, the rigid-body frame transform, ids, edge cases |
 | `test_vda5050_schemas.py` | - | every message validated against the official VDA 5050 2.0.0 schemas |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | the real coordinator and publisher against a shape-level VDA 5050 vehicle on the MQTT bus |

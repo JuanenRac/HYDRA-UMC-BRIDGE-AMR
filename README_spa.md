@@ -180,6 +180,8 @@ El usuario, la contraseña y los ficheros TLS salen de las variables `HYDRA_MQTT
 
 | Fichero de pruebas | Pruebas | Qué cubre |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | la guardia de la parada global y sus rechazos con el motivo, y lo mismo contra un broker real en un puerto local libre (el anuncio en QoS 0, 1 y 2, una parada retenida obedecida al conectar, una ilegible que falla cerrada) |
+| `test_broker_integration.py`, `broker_harness.py` | - | el cliente MQTT contra un HYDRA-UMC-MQTT-BROKER real en un puerto local libre: una orden a través del cliente, el estado retenido y la última voluntad, y la vuelta tras caer y volver el broker; se omite si faltan Node.js, `paho-mqtt` o el broker instalado (`HYDRA_UMC_TEST_BROKER_DIR`, por defecto la carpeta contigua) |
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | paso de trabajo a orden, transformación rígida de marco, ids, casos límite |
 | `test_vda5050_schemas.py` | - | cada mensaje validado contra los esquemas oficiales VDA 5050 2.0.0 |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | el coordinador y el publicador reales contra un vehículo VDA 5050 a nivel de forma en el bus MQTT |

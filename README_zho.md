@@ -180,6 +180,8 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 
 | 测试文件 | 测试数 | 覆盖内容 |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | 全局停止的守卫及其附带原因的拒绝，以及在空闲本地端口上对真实代理的同样测试（QoS 0、1、2 的通告，连接时遵从保留的停止，无法读取的通告按故障关闭处理） |
+| `test_broker_integration.py`, `broker_harness.py` | - | 在空闲本地端口上对真实 HYDRA-UMC-MQTT-BROKER 的 MQTT 客户端测试：通过客户端下发的指令、保留状态与遗嘱，以及代理掉线再恢复后的回路；缺少 Node.js、`paho-mqtt` 或已安装的代理（`HYDRA_UMC_TEST_BROKER_DIR`，默认是相邻文件夹）时会自动跳过 |
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | 任务到订单的映射、刚体坐标变换、ID、边界情况 |
 | `test_vda5050_schemas.py` | - | 每条消息都按官方 VDA 5050 2.0.0 模式验证 |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | 真实的协调器和发布器对 MQTT 总线上形态级的 VDA 5050 车辆 |

@@ -180,6 +180,8 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 
 | テストファイル | テスト数 | 対象 |
 |---|---|---|
+| `test_global_stop.py`, `test_global_stop_broker.py` | - | グローバル停止のガードと理由付きの拒否、および空いているローカルポートの実際のブローカーに対する同じ試験（QoS 0・1・2 での通知、接続時に保持された停止に従うこと、読めない通知は安全側に倒れること） |
+| `test_broker_integration.py`, `broker_harness.py` | - | 空いているローカルポート上の実際の HYDRA-UMC-MQTT-BROKER に対する MQTT クライアントの試験：クライアント経由の指示、保持された状態と遺言、ブローカーが落ちて戻った後の復帰。Node.js、`paho-mqtt`、またはインストール済みのブローカー（`HYDRA_UMC_TEST_BROKER_DIR`、既定は隣のフォルダー）がなければ自動的にスキップされます |
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | ジョブから命令への変換、剛体座標変換、ID、境界ケース |
 | `test_vda5050_schemas.py` | - | 全メッセージを公式 VDA 5050 2.0.0 スキーマで検証 |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | 実物のコーディネーターとパブリッシャーを、MQTT バス上の形式レベルの VDA 5050 車両と突き合わせ |
