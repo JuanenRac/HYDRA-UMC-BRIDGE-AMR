@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-122%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **Verificação de honestidade - o que realmente corre hoje:** a transformação de referenciais de coordenadas e a porta de trabalhos (o `AmrCoordinator`/`FrameTransform` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`) e a lógica de formato de mensagem/tópicos do VDA 5050 (o `Vda5050Publisher` de `mqtt_transport.py`) são reais e estão cobertas por 122 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, mais `test_vda5050_emulator.py`, que executa o bridge contra um emulador de AGV VDA 5050 escrito à mão e fiel ao protocolo, não contra um real). Nada disto foi exercitado contra um broker MQTT real, um cliente `paho-mqtt` real ou um AMR/gestor de frota físico: o próprio `FakeMqttClient` de `test_mqtt_transport.py` substitui por completo o `paho-mqtt` (nem sequer é preciso ter a biblioteca real instalada para estes testes passarem), e ainda não há comando `run` vivo porque não se escolheu nem validou nenhum transporte real de gestor de frota. Ver «Roteiro e limites conhecidos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora. O seu cliente MQTT também foi executado contra um HYDRA-UMC-MQTT-BROKER real numa máquina de desenvolvimento (`tests/test_broker_integration.py`, ignorado se não houver nenhum broker instalado): uma ordem publicada através dele, o estado e a ligação retidos do veículo e o seu último testamento seguidos pelo observador, e o regresso depois de o broker ter parado e arrancado de novo.
+> **Verificação de honestidade - o que realmente corre hoje:** a transformação de referenciais de coordenadas e a porta de trabalhos (o `AmrCoordinator`/`FrameTransform` de `coordinator.py`, que encaminha cada despacho pelo `evaluate_job()` do próprio `HYDRA-UMC-SDK`) e a lógica de formato de mensagem/tópicos do VDA 5050 (o `Vda5050Publisher` de `mqtt_transport.py`) são reais e estão cobertas por 145 testes unitários que passam (`python tools/build_test.py` - `test_coordinator.py`, `test_mqtt_transport.py`, mais `test_vda5050_emulator.py`, que executa o bridge contra um emulador de AGV VDA 5050 escrito à mão e fiel ao protocolo, não contra um real). Nada disto foi exercitado contra um broker MQTT real, um cliente `paho-mqtt` real ou um AMR/gestor de frota físico: o próprio `FakeMqttClient` de `test_mqtt_transport.py` substitui por completo o `paho-mqtt` (nem sequer é preciso ter a biblioteca real instalada para estes testes passarem), e ainda não há comando `run` vivo porque não se escolheu nem validou nenhum transporte real de gestor de frota. Ver «Roteiro e limites conhecidos» abaixo, que já o diz com clareza, e `CHANGELOG.md` para saber exatamente o que foi entregue até agora. O seu cliente MQTT também foi executado contra um HYDRA-UMC-MQTT-BROKER real numa máquina de desenvolvimento (`tests/test_broker_integration.py`, ignorado se não houver nenhum broker instalado): uma ordem publicada através dele, o estado e a ligação retidos do veículo e o seu último testamento seguidos pelo observador, e o regresso depois de o broker ter parado e arrancado de novo.
 
 > **Estado de segurança (safety e security):** este ecossistema não é um sistema de segurança certificado. Ainda não existe um caminho de E-STOP por hardware, nem limites ou interlocks impostos pelo firmware, nem um comando de movimento verificado; as imagens de firmware são verificadas com CRC-32 e uma assinatura Ed25519, e uma compilação de versão recusa as chaves de desenvolvimento publicadas (as cabeças de ferramenta e as placas de expansão atrás do relé ainda usam os bootloaders do URTC, que aceitam um HMAC-SHA256 de chave partilhada em vez de uma assinatura); TLS e TLS mútuo são opcionais e estão desativados por defeito; nenhuma placa própria foi ainda montada ou testada. Leia a [base de segurança](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) e o [modelo de ameaças](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) antes de confiar em qualquer afirmação aqui para a segurança de uma pessoa.
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versão | `0.1.5` |
 | Maturidade | Funcional |
-| Testes | 122 (`python tools/build_test.py`) |
+| Testes | 145 (`python tools/build_test.py`) |
 | Tecnologia | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | Em hardware real | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
 
@@ -52,7 +52,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Área | Estado | O que significa aqui |
 |---|---|---|
 | Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
-| Testes | 🟢 | 122 testes automáticos, executados a cada alteração |
+| Testes | 🟢 | 145 testes automáticos, executados a cada alteração |
 | Hardware real | 🟠 | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
 | Documentação | 🟢 | README em oito idiomas, verificado contra o manifesto a cada alteração |
 
@@ -110,6 +110,7 @@ flowchart LR
 * 🔜 **Um adaptador REST/WebSocket específico de um gestor de frota** (para uma plataforma de frota que não seja nativa VDA 5050): só se introduzirá depois de se escolher e testar essa plataforma. *(planeado)*
 * ✅ **Estado observado da máquina e ids de ordem que sobrevivem a um reinício:** `AmrCoordinator.dispatch()` aceita o estado que o gestor de frota comunicou do veículo, que a porta partilhada usa em vez do `machine_state` escrito no trabalho (uma mensagem que qualquer pessoa no broker pode publicar); o `Vda5050Publisher` dá a cada ordem um `orderId` com um token próprio, para que um reinício que volte a contar o `headerId` desde o princípio não reutilize o id de uma ordem anterior (o VDA 5050 recusa-o). *(implementado, testado em `tests/test_observed_and_order_ids.py`)*
 * ✅ **Nomes VDA 5050 no fio, um cliente que o broker aceita e um observador que escuta:** os internos `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` saem como os tipos de ação VDA 5050, sensíveis a maiúsculas, `cancelOrder` / `pick` / `drop` (antes o `CANCEL_ORDER` saía tal e qual, e um AGV não o reconhece como cancelamento), e um movimento é apenas o seu nó de destino, sem um tipo de ação inventado; `actionId` e `nodeId` levam o token de sessão como o `orderId`; `header_id` e `timestamp_iso` podem ser omitidos (o publicador conta por tópico e põe a hora UTC) e são validados quando dados; uma coordenada que transborda, um número não finito ou um ponto fora de `FrameTransform.bounds` é recusado (`allow_nan=False`). O `open_mqtt_client()` recebe um `client_id` (o broker autentica pelo seu prefixo), usa a API de callbacks v2 e espera pela resposta do broker em vez de devolver um cliente que não consegue publicar; com um `Vda5050Observer` subscreve os tópicos `state` e `connection` do AGV e deriva o estado de máquina que a porta usa (OFFLINE se caducado, não ONLINE ou não em modo AUTOMATIC; caso contrário SAFE_STOP, FAULT, HOLDING, RUNNING ou IDLE). *(implementado, testado com dobles e com o emulador; nunca executado contra um AGV nem um gestor de frota reais, e uma rota que parta do nó onde o AGV está (dois nós e uma aresta, o que exige o grafo da fábrica) AINDA NÃO é construída, pelo que um AGV real recusará estas ordens de um só nó de destino)*
+* ✅ **Segue a paragem global (desativado por defeito):** com `HYDRA_UMC_AMR_GLOBAL_STOP=1` o bridge lê o anúncio retido do servidor em `hydra/swarm/safety/estop`; enquanto disser `SAFE_STOP`, ou não puder ser lido, recusa com um motivo: toda a ordem que move o veículo (cancelar e pausar passam). As paragens e os pedidos só de leitura continuam a funcionar e só `READY` termina a recusa. *(implementado, testado contra um broker real; nunca executado com um servidor real)*
 
 ## 🔒 Segurança e proteção
 
@@ -145,6 +146,7 @@ A biblioteca: `AmrCoordinator`, `FrameTransform`, `Vda5050Publisher`, `Vda5050Ta
 | `HYDRA_MQTT_TLS_CA` | nenhum | O ficheiro da CA que assinou o certificado do broker: a ligação é TLS e o certificado é verificado |
 | `HYDRA_MQTT_TLS` | desativado | `1` ativa o TLS, verificado com as CA de confiança do sistema |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | nenhum | O certificado de cliente e a sua chave para um broker que exige TLS mútuo; são precisos os dois |
+| `HYDRA_UMC_AMR_GLOBAL_STOP` | desativado | `1` segue a paragem global do servidor: enquanto o último anúncio no tópico retido `hydra/swarm/safety/estop` disser `SAFE_STOP` (ou não puder ser lido), o bridge recusa com um motivo: toda a ordem que move o veículo (cancelar e pausar passam); só `READY` lhe põe fim. `HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` muda o tópico e `HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` recusa também até chegar o primeiro anúncio |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | nenhum (sem limite) | A maior mensagem `state` ou `connection`, em bytes, que o observador analisa; uma maior é ignorada como qualquer mensagem ilegível |
 
 Não há ficheiro de configuração: o broker, `interface_name`, `major_version`, `manufacturer`, `serial_number` e a ação de aborto (`cancelOrder`, `startPause` ou ambas) são argumentos dos construtores.
@@ -174,7 +176,7 @@ O nome de utilizador, a palavra-passe e os ficheiros TLS vêm das variáveis `HY
 
 ## 🧪 Testes
 
-122 casos `unittest` automáticos correm com `python tools/build_test.py` (que também compila cada módulo). Os testes não precisam de hardware, rede nem pacotes opcionais: os que precisariam de `paho-mqtt`, `pyserial` ou de uma biblioteca do fabricante usam um substituto ou são saltados se o pacote faltar.
+145 casos `unittest` automáticos correm com `python tools/build_test.py` (que também compila cada módulo). Os testes não precisam de hardware, rede nem pacotes opcionais: os que precisariam de `paho-mqtt`, `pyserial` ou de uma biblioteca do fabricante usam um substituto ou são saltados se o pacote faltar.
 
 | Ficheiro de testes | Testes | O que cobre |
 |---|---|---|
@@ -199,7 +201,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` compila com `py_compile` cada módulo em `src/` e executa a suíte `unittest` completa descoberta em `tests/` (todos os ficheiros `test_*.py` - 122 testes), de forma determinista, sem ligação a nenhum AMR real, sem rede e sem alteração de versão/CHANGELOG. `build` executa primeiro essa mesma validação e, só se correr bem, chama `tools/bump_version.py` para sincronizar a versão em `pyproject.toml`, `hydra-umc.project.json` e `CHANGELOG.md`. Ainda não há comando `run` de hardware vivo: exige um adaptador de transporte de gestor de frota validado e um AMR/frota real.
+`build-test` compila com `py_compile` cada módulo em `src/` e executa a suíte `unittest` completa descoberta em `tests/` (todos os ficheiros `test_*.py` - 145 testes), de forma determinista, sem ligação a nenhum AMR real, sem rede e sem alteração de versão/CHANGELOG. `build` executa primeiro essa mesma validação e, só se correr bem, chama `tools/bump_version.py` para sincronizar a versão em `pyproject.toml`, `hydra-umc.project.json` e `CHANGELOG.md`. Ainda não há comando `run` de hardware vivo: exige um adaptador de transporte de gestor de frota validado e um AMR/frota real.
 
 ## 🩺 Resolução de problemas
 

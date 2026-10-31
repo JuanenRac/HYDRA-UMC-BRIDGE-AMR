@@ -35,6 +35,18 @@ Set `HYDRA_UMC_SDK_ROOT` when the SDK is not a sibling checkout. Use `build-test
 
 Keep a new script in the repository root only when it is an operator entry point. Add the standard copyright header, state whether it mutates version/CHANGELOG, print numbered steps, and end `.bat` scripts with `pause`. Put reusable Python logic under `tools/`, compile it in `tools/build_test.py`, add deterministic tests (a coordinate-frame change needs a hand-checkable numeric test, not just a passing assertion) and document the command in the README and this guide. A script must not open a real transport, discover a fleet or send an order implicitly.
 
+## Following the global stop
+
+The server can announce a global stop on `<mqtt prefix>/safety/estop` (a retained `SafetyState` message: `SAFE_STOP`, later `READY`; the contract is `docs/GLOBAL_STOP.md` of HYDRA-UMC-SERVER). This bridge can follow it. It is off by default and then behaves exactly as before: it does not even subscribe to the topic.
+
+| Switch | Default | Meaning |
+|---|---|---|
+| `HYDRA_UMC_AMR_GLOBAL_STOP` | off | `1` makes the bridge subscribe to the announcement (QoS 1, again after every reconnect) |
+| `HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` | `hydra/swarm/safety/estop` | the topic, when the MQTT prefix of the server is not the default one |
+| `HYDRA_UMC_AMR_GLOBAL_STOP_STRICT` | off | `1` also refuses before the first announcement has been heard |
+
+While the last announcement says `SAFE_STOP`, says anything but `READY`, or cannot be read, the VDA 5050 publisher (`Vda5050Publisher`) and the client of `open_mqtt_client()` refuses every order that moves the vehicle (a movement, a pick, a drop and the end of a pause); the abort actions, `cancelOrder` and `startPause`, always go out with an answer that gives the reason (`global stop active (SAFE_STOP) - nothing moves until the server announces READY`); the abort actions keep working. Only a `READY` message ends it. The announcement is read although it is retained: it is the state, not a replayed command. When the broker is lost the bridge keeps the last state it heard; a bridge that has not heard the topic yet is left as it was, unless `HYDRA_UMC_AMR_GLOBAL_STOP_STRICT` is on. This is a refusal in software: the controller and the machine keep the last word, and the contract adds a stop, it never removes one. Tested against a real broker (`tests/test_global_stop_broker.py`); never run with the real server.
+
 ## Hardware acceptance gate
 
 Before deploying an adapter: survey and document the real `FrameTransform` (origin, heading) for the target site, select the real fleet-manager interface (VDA 5050, vendor REST/WebSocket, or an open-source topic set) and its authentication, bind authenticated AMR/fleet identity, verify stale/disconnected-state behavior, test `CANCEL_ORDER` independently as a real safe fallback, and perform a bounded, low-speed bench test before any occupied-space run. The AMR's own onboard navigation (or its fleet manager) remains responsible for real-time obstacle avoidance and motion safety.

@@ -41,10 +41,12 @@ from hydra_umc_sdk.bridge_transport import connect_with_retry
 from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
 
 from .coordinator import AmrCoordinator, AmrDispatch
+from .global_stop import GlobalStopGuard, follow_on_connect, process_wide_guard
 
 _LOG = logging.getLogger(__name__)
 
 DEFAULT_CLIENT_ID = "hydra-umc-bridge-amr"
+GLOBAL_STOP_ENVIRONMENT_NAME = "AMR"
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,7 @@ def open_mqtt_client(
     client_id: str = DEFAULT_CLIENT_ID,
     connack_timeout_seconds: float = 10.0,
     observer: "Observer | None" = None,
+    global_stop: GlobalStopGuard | None = None,
 ) -> MqttPublisher:
     """Open a real MQTT connection. The only place this module imports paho-mqtt.
 
@@ -96,6 +99,10 @@ def open_mqtt_client(
     it is a refusal or does not come, instead of returning a client whose every
     publish would fail. With an `observer` (see observer.py) it also subscribes to
     the AGV's `state` and `connection` topics, again after every reconnect.
+
+    `global_stop` is the guard that follows the global stop of the server (see `global_stop.py`); when it is not given the one of this process is used
+    (`HYDRA_UMC_AMR_GLOBAL_STOP=1` switches it on, default off). When it is on, the client subscribes to the announcement after every reconnect and feeds the
+    guard, which the publisher asks before it sends anything that moves the vehicle.
     """
 
     if password is not None and username is None:
@@ -113,14 +120,19 @@ def open_mqtt_client(
     apply_connection_settings(client, settings_from_env(), username=username, password=password)
     client.reconnect_delay_set(min_delay=1, max_delay=30)
 
+    guard = global_stop if global_stop is not None else process_wide_guard(GLOBAL_STOP_ENVIRONMENT_NAME)
+    follow = follow_on_connect(guard)
     answered = threading.Event()
     refusal: list[str] = []
 
     def on_connect(client: object, userdata: object, flags: object, reason_code: object, properties: object = None) -> None:
         if getattr(reason_code, "is_failure", False):
             refusal.append(str(reason_code))
-        elif observer is not None:
-            client.subscribe(observer.subscriptions())  # type: ignore[attr-defined]
+        else:
+            if observer is not None:
+                client.subscribe(observer.subscriptions())  # type: ignore[attr-defined]
+            if follow is not None:
+                follow(client)
         answered.set()
 
     def on_disconnect(client: object, userdata: object, *args: object) -> None:
@@ -128,8 +140,15 @@ def open_mqtt_client(
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    if observer is not None:
-        client.on_message = lambda _client, _userdata, message: observer.on_message(message.topic, bytes(message.payload))
+    if observer is not None or follow is not None:
+
+        def on_message(_client: object, _userdata: object, message: object) -> None:
+            if follow is not None and message.topic == guard.topic:  # type: ignore[attr-defined]
+                guard.observe(bytes(message.payload))  # type: ignore[attr-defined]  # retained or not: it is the state
+            elif observer is not None:
+                observer.on_message(message.topic, bytes(message.payload))  # type: ignore[attr-defined]
+
+        client.on_message = on_message
 
     connect_with_retry(
         lambda: client.connect(host, port, keepalive=keepalive_seconds),
@@ -187,7 +206,9 @@ class Vda5050Publisher:
     When a caller does give them they must be a non-negative integer and an ISO 8601 UTC timestamp, which VDA 5050 requires.
     """
 
-    def __init__(self, clock: Callable[[], str] = _utc_timestamp) -> None:
+    def __init__(self, clock: Callable[[], str] = _utc_timestamp, *, global_stop: GlobalStopGuard | None = None) -> None:
+        # while the server announces a global stop (and the switch is on) nothing that moves the vehicle is published; the abort actions always are
+        self._global_stop = global_stop if global_stop is not None else process_wide_guard(GLOBAL_STOP_ENVIRONMENT_NAME)
         self._session = secrets.token_hex(4)
         self._clock = clock
         self._header_ids: dict[str, int] = {}
@@ -212,6 +233,8 @@ class Vda5050Publisher:
         # place to reconsider a safety decision already made.
         if not dispatch.accepted:
             return PublishResult(False, dispatch.reason)
+        if dispatch.action not in AmrCoordinator.ABORT_ACTIONS and self._global_stop.blocks():
+            return PublishResult(False, self._global_stop.reason())
 
         topic = target.topic(dispatch.channel)
         if header_id is None:

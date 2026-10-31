@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-122%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 122 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。 其 MQTT 客户端也已在开发机器上针对真实的 HYDRA-UMC-MQTT-BROKER 运行过(`tests/test_broker_integration.py`,未安装 broker 时会跳过):通过它发布的订单、观察者跟踪的车辆保留状态与连接及其遗嘱消息,以及 broker 停止后重新启动时的恢复。
+> **诚实检查——今天真正可运行的部分：** 坐标系变换与任务门控（`coordinator.py` 中的 `AmrCoordinator`/`FrameTransform`，每次派发都会经过 `HYDRA-UMC-SDK` 自身真正的 `evaluate_job()`）以及 VDA 5050 消息格式/主题逻辑（`mqtt_transport.py` 中的 `Vda5050Publisher`）都是真实的，并由 145 个通过的单元测试覆盖（`python tools/build_test.py` —— `test_coordinator.py`、`test_mqtt_transport.py`，以及让该桥接对抗一个协议忠实但纯手写的 VDA 5050 AGV 模拟器（而非真实生产环境中的 AGV）的 `test_vda5050_emulator.py`）。以上这些都从未针对真实的 MQTT broker、真实的 `paho-mqtt` 客户端或实体 AMR/车队管理系统进行过验证——`test_mqtt_transport.py` 自带的 `FakeMqttClient` 完全替代了 `paho-mqtt`（这些测试甚至不需要安装真正的库就能通过），并且目前还没有实时的 `run` 命令，因为尚未选定或验证任何真实的车队管理传输方案。详见下文的"当前状态与后续步骤"（已经如实说明了这一点），以及 `CHANGELOG.md` 中目前具体已交付的内容。 其 MQTT 客户端也已在开发机器上针对真实的 HYDRA-UMC-MQTT-BROKER 运行过(`tests/test_broker_integration.py`,未安装 broker 时会跳过):通过它发布的订单、观察者跟踪的车辆保留状态与连接及其遗嘱消息,以及 broker 停止后重新启动时的恢复。
 
 > **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC-32 和 Ed25519 签名校验,发布构建会拒绝已公开的开发密钥(中继之后的工具头和扩展板仍运行 URTC 的引导程序,它们使用共享密钥的 HMAC-SHA256 而不是签名);TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.5` |
 | 成熟度 | 可用 |
-| 测试 | 122 (`python tools/build_test.py`) |
+| 测试 | 145 (`python tools/build_test.py`) |
 | 技术栈 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | 真实硬件 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 122 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 145 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟠 | 仅模拟：使用模拟器、替身或仿真测试；此版本没有在真实硬件上运行的记录 |
 | 文档 | 🟢 | 八种语言的 README，每次变更都会与清单核对 |
 
@@ -110,6 +110,7 @@ flowchart LR
 * 🔜 **厂商专属的车队管理器 REST/WebSocket 适配器**(面向非 VDA 5050 原生的车队平台)——只有在选定并测试了该平台之后才会引入。*(计划中)*
 * ✅ **观测到的机器状态与重启后不重复的订单 ID：** `AmrCoordinator.dispatch()` 接受车队管理器上报的车辆状态，共享闸门使用它而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息）；`Vda5050Publisher` 给每个订单的 `orderId` 加上自己的令牌，这样重启后 `headerId` 从头计数时不会重用先前订单的 ID（VDA 5050 会拒绝）。*（已实现，已在 `tests/test_observed_and_order_ids.py` 中测试）*
 * ✅ **线路上的 VDA 5050 名称、代理接受的客户端和会倾听的观察者:** 内部的 `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` 以区分大小写的 VDA 5050 动作类型 `cancelOrder` / `pick` / `drop` 发出(此前 `CANCEL_ORDER` 原样发出,AGV 不会把它识别为取消),移动只是它的目的地节点,不带臆造的动作类型;`actionId` 和 `nodeId` 与 `orderId` 一样带有会话令牌;`header_id` 和 `timestamp_iso` 可以省略(发布者按主题计数并加上 UTC 时间),给出时会被校验;溢出的坐标、非有限数值或 `FrameTransform.bounds` 之外的点会被拒绝(`allow_nan=False`)。`open_mqtt_client()` 接受 `client_id`(代理按其前缀认证),使用回调 API v2,并等待代理的应答,而不是返回一个无法发布的客户端;配合 `Vda5050Observer` 时,它订阅 AGV 的 `state` 和 `connection` 主题,并推导出闸门使用的机器状态(过期、不是 ONLINE 或不在 AUTOMATIC 模式时为 OFFLINE;否则为 SAFE_STOP、FAULT、HOLDING、RUNNING 或 IDLE)。*(已实现,已用替身和模拟器测试;从未针对真实的 AGV 或车队管理器运行,并且从 AGV 所在节点出发的路线(两个节点加一条边,需要工厂图)尚未构建,因此真实的 AGV 会拒绝这些只有一个目的地节点的订单)*
+* ✅ **跟随全局停止（默认关闭）:** 设置 `HYDRA_UMC_AMR_GLOBAL_STOP=1` 后，桥接读取服务器在 `hydra/swarm/safety/estop` 上的保留通知；通知为 `SAFE_STOP` 或无法读取时，它会带原因拒绝：所有使车辆移动的订单（取消和暂停放行）。停止命令和只读请求照常工作，只有 `READY` 才能解除拒绝。*（已实现，已对真实代理测试；从未与真实服务器一起运行）*
 
 ## 🔒 安全与防护
 
@@ -145,6 +146,7 @@ VDA 5050 主题为 `{interface_name}/{major_version}/{manufacturer}/{serial_numb
 | `HYDRA_MQTT_TLS_CA` | 无 | 签署代理证书的 CA 文件：连接使用 TLS 并验证证书 |
 | `HYDRA_MQTT_TLS` | 关闭 | `1` 启用 TLS，并用系统信任的 CA 验证 |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | 无 | 用于要求双向 TLS 的代理的客户端证书及其密钥；两者都需要 |
+| `HYDRA_UMC_AMR_GLOBAL_STOP` | 关闭 | `1` 跟随服务器的全局停止：只要保留主题 `hydra/swarm/safety/estop` 上最新的通知是 `SAFE_STOP`（或无法读取），桥接就会带原因拒绝：所有使车辆移动的订单（取消和暂停放行）；只有 `READY` 才能解除。`HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` 可更改主题，`HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` 会在收到第一条通知之前也拒绝 |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | 无（不设上限） | 观察者解析的 `state` 或 `connection` 消息的最大字节数；更大的消息像任何无法读取的消息一样被忽略 |
 
 没有配置文件：代理、`interface_name`、`major_version`、`manufacturer`、`serial_number` 和中止动作（`cancelOrder`、`startPause` 或两者）都是构造函数的参数。
@@ -174,7 +176,7 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 
 ## 🧪 测试
 
-运行 `python tools/build_test.py` 会执行 122 个自动 `unittest` 用例（同时编译每个模块）。测试不需要硬件、网络或可选软件包：需要 `paho-mqtt`、`pyserial` 或厂商库的用例使用替身，缺少软件包时则跳过。
+运行 `python tools/build_test.py` 会执行 145 个自动 `unittest` 用例（同时编译每个模块）。测试不需要硬件、网络或可选软件包：需要 `paho-mqtt`、`pyserial` 或厂商库的用例使用替身，缺少软件包时则跳过。
 
 | 测试文件 | 测试数 | 覆盖内容 |
 |---|---|---|
@@ -199,7 +201,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(所有 `test_*.py` 文件——共 122 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
+`build-test` 使用 `py_compile` 编译 `src/` 下的每个模块,并运行在 `tests/` 下发现的完整 `unittest` 套件(所有 `test_*.py` 文件——共 145 个测试)——以确定性的方式进行,没有真实 AMR 连接,没有网络,也不会改变版本/CHANGELOG。`build` 会先运行同样的验证,只有成功后才调用 `tools/bump_version.py`,在 `pyproject.toml`、`hydra-umc.project.json` 和 `CHANGELOG.md` 之间同步版本号。目前尚无真正的硬件 `run` 命令——这需要经过验证的车队管理器传输适配器和真实的 AMR/车队。
 
 ## 🩺 故障排除
 

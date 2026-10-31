@@ -18,14 +18,14 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
-  <img src="https://img.shields.io/badge/Tests-122%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、122件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。 MQTT クライアントは、開発用マシン上の本物の HYDRA-UMC-MQTT-BROKER に対しても実行されています(`tests/test_broker_integration.py`。ブローカーが未インストールの場合はスキップされます)。クライアント経由で発行したオーダー、オブザーバーが追跡する車両の保持された状態と接続およびそのラストウィル、ブローカーが停止して再起動した後の復帰を確認しています。
+> **誠実性チェック - 今日実際に動くもの:** 座標フレーム変換とジョブゲート（`coordinator.py` の `AmrCoordinator`/`FrameTransform`。すべてのディスパッチは `HYDRA-UMC-SDK` 自身の本物の `evaluate_job()` を通過する）、および VDA 5050 のメッセージ形式/トピックロジック（`mqtt_transport.py` の `Vda5050Publisher`）は本物であり、145件の通過するユニットテストで検証されている（`python tools/build_test.py` - `test_coordinator.py`、`test_mqtt_transport.py`、および実運用中の本物ではなくプロトコルに忠実な手書きの VDA 5050 AGV エミュレータに対してブリッジを動かす `test_vda5050_emulator.py`）。これらはいずれも、本物の MQTT ブローカー、本物の `paho-mqtt` クライアント、あるいは物理的な AMR・フリートマネージャーに対しては検証されていない - `test_mqtt_transport.py` 独自の `FakeMqttClient` が `paho-mqtt` を完全に置き換えており（本物のライブラリがインストールされていなくてもこれらのテストは通過する）、実際のフリートマネージャー用トランスポートがまだ選定・検証されていないため、実機向けの `run` コマンドもまだ存在しない。詳細は下記の「ロードマップと既知の制限」に既に明記されており、これまでに実際に出荷された内容は `CHANGELOG.md` を参照。 MQTT クライアントは、開発用マシン上の本物の HYDRA-UMC-MQTT-BROKER に対しても実行されています(`tests/test_broker_integration.py`。ブローカーが未インストールの場合はスキップされます)。クライアント経由で発行したオーダー、オブザーバーが追跡する車両の保持された状態と接続およびそのラストウィル、ブローカーが停止して再起動した後の復帰を確認しています。
 
 > **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC-32 と Ed25519 署名で検査し、リリースビルドは公開済みの開発用鍵を拒否します(リレーの先のツールヘッドと拡張ボードは引き続き URTC のブートローダーを使い、署名ではなく共有鍵の HMAC-SHA256 を使います)。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
 
@@ -37,7 +37,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.5` |
 | 成熟度 | 機能する |
-| テスト | 122 (`python tools/build_test.py`) |
+| テスト | 145 (`python tools/build_test.py`) |
 | 技術 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
 | 実機での確認 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 122 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 145 件。変更のたびに実行されます |
 | 実機 | 🟠 | シミュレーションのみ：エミュレーター、模擬部品、シミュレーターで試験済み。このバージョンについて実機での動作記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
 
@@ -110,6 +110,7 @@ flowchart LR
 * 🔜 **ベンダー固有のフリートマネージャー REST/WebSocket アダプター**（VDA 5050 ネイティブではないフリートプラットフォーム向け） —— そのプラットフォームが選定・テストされた後にのみ導入される。*(計画中)*
 * ✅ **観測した機器の状態と、再起動後も重複しないオーダー ID:** `AmrCoordinator.dispatch()` は、フリートマネージャーが車両について報告した状態を受け取り、共有ゲートはジョブに書かれた `machine_state`（ブローカー上の誰でも発行できるメッセージ）の代わりにそれを使います。`Vda5050Publisher` は各オーダーの `orderId` に固有のトークンを付けるので、`headerId` を最初から数え直す再起動でも以前のオーダーの ID を再利用しません（VDA 5050 はそれを拒否します）。*（実装済み、`tests/test_observed_and_order_ids.py` でテスト済み）*
 * ✅ **ワイヤ上のVDA 5050の名前、ブローカーが受け入れるクライアント、聞き取るオブザーバー:** 内部名の `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` は、大文字小文字を区別するVDA 5050のアクションタイプ `cancelOrder` / `pick` / `drop` として送られます(以前は `CANCEL_ORDER` がそのまま送られ、AGVはキャンセルとして認識しません)。移動は目的地ノードだけで、作り出したアクションタイプは付きません。`actionId` と `nodeId` は `orderId` と同様にセッショントークンを持ちます。`header_id` と `timestamp_iso` は省略でき(パブリッシャーがトピックごとに数え、UTCの時刻を付ける)、指定された場合は検証されます。オーバーフローする座標、有限でない数値、`FrameTransform.bounds` の外の点は拒否されます(`allow_nan=False`)。`open_mqtt_client()` は `client_id`(ブローカーはそのプレフィックスで認証)を受け取り、コールバックAPI v2を使い、発行できないクライアントを返す代わりにブローカーの応答を待ちます。`Vda5050Observer` を渡すとAGVの `state` と `connection` トピックを購読し、ゲートが使う機械状態を導きます(古い、ONLINEでない、AUTOMATICモードでない場合はOFFLINE。それ以外はSAFE_STOP、FAULT、HOLDING、RUNNING、IDLE)。*(実装済み、ダブルとエミュレーターでテスト済み。実際のAGVやフリートマネージャーでは未実行で、AGVが今いるノードから始まる経路(2つのノードと1本のエッジ、工場のグラフが必要)はまだ作られないため、実際のAGVはこの単一の目的地ノードの指示を拒否します)*
+* ✅ **グローバル停止に従う（既定ではオフ）:** `HYDRA_UMC_AMR_GLOBAL_STOP=1` で、ブリッジは `hydra/swarm/safety/estop` のサーバーの保持通知を読みます。それが `SAFE_STOP` の間、または読み取れない間は、理由を付けて次を拒否します：車両を動かすすべてのオーダー（キャンセルと一時停止は通す）。停止と読み取り専用の要求は動き続け、拒否を解くのは `READY` だけです。*（実装済み、実際のブローカーに対してテスト済み。実際のサーバーでは未実行）*
 
 ## 🔒 セキュリティと安全
 
@@ -145,6 +146,7 @@ VDA 5050 のトピックは `{interface_name}/{major_version}/{manufacturer}/{se
 | `HYDRA_MQTT_TLS_CA` | なし | ブローカーの証明書に署名した CA のファイル。接続は TLS になり、証明書が検証されます |
 | `HYDRA_MQTT_TLS` | オフ | `1` で TLS を有効にし、システムの信頼する CA で検証します |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | なし | 相互 TLS を求めるブローカー用のクライアント証明書とその鍵。両方が必要です |
+| `HYDRA_UMC_AMR_GLOBAL_STOP` | オフ | `1` でサーバーのグローバル停止に従います。保持トピック `hydra/swarm/safety/estop` の最新の通知が `SAFE_STOP`（または読み取れない）の間、ブリッジは理由を付けて次を拒否します：車両を動かすすべてのオーダー（キャンセルと一時停止は通す）。解除は `READY` のみです。`HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` でトピックを変更でき、`HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` は最初の通知が届くまでも拒否します |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | なし（上限なし） | オブザーバーが解析する `state` または `connection` メッセージの最大サイズ（バイト）。これより大きいものは読めないメッセージと同様に無視されます |
 
 設定ファイルはありません。ブローカー、`interface_name`、`major_version`、`manufacturer`、`serial_number`、中止動作（`cancelOrder`、`startPause`、または両方）はコンストラクターの引数です。
@@ -174,7 +176,7 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 
 ## 🧪 テスト
 
-`python tools/build_test.py` で自動 `unittest` 122 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
+`python tools/build_test.py` で自動 `unittest` 145 件を実行します（各モジュールのコンパイルも行います）。テストにハードウェア、ネットワーク、オプションのパッケージは不要で、`paho-mqtt`・`pyserial`・ベンダーのライブラリが必要なものは代用品を使うか、パッケージがなければスキップされます。
 
 | テストファイル | テスト数 | 対象 |
 |---|---|---|
@@ -199,7 +201,7 @@ bash build-test.sh
 bash build.sh
 ```
 
-`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(すべての `test_*.py` - 122件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
+`build-test` は `src/` 配下の各モジュールを `py_compile` でコンパイルし、`tests/` 配下で検出される `unittest` の全スイート(すべての `test_*.py` - 145件のテスト)を実行する —— 実際のAMR接続もネットワークもなく決定論的に動作し、バージョンやCHANGELOGを変更しない。`build` はまず同じ検証を実行し、成功した場合のみ `tools/bump_version.py` を呼び出して `pyproject.toml`、`hydra-umc.project.json`、`CHANGELOG.md` の間でバージョンを同期する。実際のハードウェア向け `run` コマンドはまだ存在しない —— それには検証済みのフリートマネージャー・トランスポートアダプターと実際のAMR/フリートが必要である。
 
 ## 🩺 トラブルシューティング
 
