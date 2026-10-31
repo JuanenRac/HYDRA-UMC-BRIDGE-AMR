@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
   <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| Versión | `0.1.5` |
+| Versión | `0.1.6` |
 | Madurez | Funcional |
 | Tests | 145 (`python tools/build_test.py`) |
 | Tecnología | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
@@ -252,7 +252,7 @@ HYDRA-UMC-BRIDGE-AMR/
 
 **Límites conocidos hoy**
 
-**Real hoy:** versión `0.1.5`, funcional como núcleo de coordinación sin dependencias (`AmrCoordinator`) con una transformación real de marco de coordenadas verificada a mano (`FrameTransform`), enrutado de fase con fallo cerrado, un esquema de orden estático `plan-only` con la división real de canales order/instantActions de VDA 5050, un publicador MQTT VDA 5050 real (`Vda5050Publisher`), y scripts de build-test sin mutación integrados en CI con un checkout del SDK.
+**Real hoy:** versión `0.1.6`, funcional como núcleo de coordinación sin dependencias (`AmrCoordinator`) con una transformación real de marco de coordenadas verificada a mano (`FrameTransform`), enrutado de fase con fallo cerrado, un esquema de orden estático `plan-only` con la división real de canales order/instantActions de VDA 5050, un publicador MQTT VDA 5050 real (`Vda5050Publisher`), y scripts de build-test sin mutación integrados en CI con un checkout del SDK.
 
 **Frontera de integración:** este bridge es solo una frontera de coordinación - no es un nodo de navegación ni de control de motores, y no puede saltarse HYDRA-UMC-SERVER, los límites del MCU, los watchdogs ni el E-STOP; cada trabajo despachado sigue pasando por la misma puerta compartida que usan todos los bridges hermanos.
 

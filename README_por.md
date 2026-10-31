@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
   <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| Versão | `0.1.5` |
+| Versão | `0.1.6` |
 | Maturidade | Funcional |
 | Testes | 145 (`python tools/build_test.py`) |
 | Tecnologia | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
@@ -252,7 +252,7 @@ HYDRA-UMC-BRIDGE-AMR/
 
 **Limites conhecidos hoje**
 
-**Real hoje:** versão `0.1.5`, funcional como núcleo de coordenação sem dependências (`AmrCoordinator`) com uma transformação real de referenciais verificada à mão (`FrameTransform`), encaminhamento de fases com falha segura, um esquema estático de ordens `plan-only` com a divisão real de canais order/instantActions do VDA 5050, um publicador MQTT VDA 5050 real (`Vda5050Publisher`) e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
+**Real hoje:** versão `0.1.6`, funcional como núcleo de coordenação sem dependências (`AmrCoordinator`) com uma transformação real de referenciais verificada à mão (`FrameTransform`), encaminhamento de fases com falha segura, um esquema estático de ordens `plan-only` com a divisão real de canais order/instantActions do VDA 5050, um publicador MQTT VDA 5050 real (`Vda5050Publisher`) e scripts build-test que não alteram nada ligados ao CI com um checkout do SDK.
 
 **Fronteira de integração:** este bridge é apenas uma fronteira de coordenação: não é um nó de navegação nem de controlo de motores e não pode contornar o HYDRA-UMC-SERVER, os limites do MCU, os watchdogs nem a paragem de emergência (E-STOP); cada trabalho despachado continua a passar pela mesma porta partilhada que usam todos os bridges irmãos.
 

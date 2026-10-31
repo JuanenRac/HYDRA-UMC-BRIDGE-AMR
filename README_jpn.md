@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB.svg" alt="Python">
   <img src="https://img.shields.io/badge/Safety-Fails%20Closed-red.svg" alt="Safety">
   <img src="https://img.shields.io/badge/Tests-145%20passing-2ea44f.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| バージョン | `0.1.5` |
+| バージョン | `0.1.6` |
 | 成熟度 | 機能する |
 | テスト | 145 (`python tools/build_test.py`) |
 | 技術 | Python / VDA 5050 (subset) / MQTT / HYDRA-UMC-SDK |
@@ -252,7 +252,7 @@ HYDRA-UMC-BRIDGE-AMR/
 
 **現時点の既知の制限**
 
-**現時点で実在するもの:** バージョン `0.1.5`。実在する手検証済みの座標系変換(`FrameTransform`)、フェイルクローズのフェーズルーティング、VDA 5050 の実際の order/instantActions チャネル分割を備えた静的な `plan-only` オーダースキーマ、実際の VDA 5050 MQTT パブリッシャー(`Vda5050Publisher`)、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`AmrCoordinator`)として機能している。
+**現時点で実在するもの:** バージョン `0.1.6`。実在する手検証済みの座標系変換(`FrameTransform`)、フェイルクローズのフェーズルーティング、VDA 5050 の実際の order/instantActions チャネル分割を備えた静的な `plan-only` オーダースキーマ、実際の VDA 5050 MQTT パブリッシャー(`Vda5050Publisher`)、SDKチェックアウトを伴いCIに組み込まれた非破壊的なbuild-testスクリプトを備える依存関係なしの連携コア(`AmrCoordinator`)として機能している。
 
 **統合境界:** このブリッジは連携境界に過ぎない —— ナビゲーションノードでもモーター制御ノードでもなく、HYDRA-UMC-SERVER、MCUの限界、ウォッチドッグ、E-STOPを迂回することはできない。送信されるすべてのジョブは、依然としてすべての兄弟ブリッジが使う同じ共有ゲートを通過する。
 
