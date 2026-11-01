@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.7] - The global stop guard comes from the shared SDK
+
 - **The guard of the global stop comes from the shared SDK:** the bridge no longer carries its own copy of `global_stop`; it imports `GlobalStopGuard`, `GlobalStopSettings` and `follow_on_connect` from `hydra_umc_sdk.global_stop`, so every bridge refuses moving commands under the same rule. The environment variables and the `[global_stop]` table are unchanged.
 
 ## [0.1.6] - A bridge that can follow the global stop of the server, a client tested against a real broker and a cap on what the observer parses
