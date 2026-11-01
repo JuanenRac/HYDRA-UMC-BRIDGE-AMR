@@ -16,7 +16,7 @@ import unittest
 import broker_harness as harness
 
 from hydra_umc_bridge_amr import AmrDispatch, Vda5050Publisher, Vda5050Target
-from hydra_umc_bridge_amr.global_stop import DEFAULT_TOPIC, GlobalStopGuard, GlobalStopSettings
+from hydra_umc_sdk.global_stop import DEFAULT_TOPIC, GlobalStopGuard, GlobalStopSettings
 from hydra_umc_bridge_amr.mqtt_transport import open_mqtt_client
 
 TARGET = Vda5050Target("vda5050", "v2", "hydra-umc", "amr-1")

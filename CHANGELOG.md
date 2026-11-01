@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The guard of the global stop comes from the shared SDK:** the bridge no longer carries its own copy of `global_stop`; it imports `GlobalStopGuard`, `GlobalStopSettings` and `follow_on_connect` from `hydra_umc_sdk.global_stop`, so every bridge refuses moving commands under the same rule. The environment variables and the `[global_stop]` table are unchanged.
+
 ## [0.1.6] - A bridge that can follow the global stop of the server, a client tested against a real broker and a cap on what the observer parses
 
 - **The bridge can follow the global stop of the server, off by default:** with `HYDRA_UMC_AMR_GLOBAL_STOP=1` it subscribes to the retained announcement on `hydra/swarm/safety/estop` (`HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` changes the topic) and, while the last message says `SAFE_STOP`, says anything but `READY` or cannot be read, every order that moves the vehicle is refused (the abort actions always go out) with the reason in the answer; stops and read-only requests keep working and only `READY` ends it. `HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` also refuses until the first announcement has been heard. Without the switch nothing changes. `tests/test_global_stop.py` covers the guard and the refusals, `tests/test_global_stop_broker.py` runs them against a real broker on a free local port (the announcement is delivered at QoS 0, 1 and 2, a retained stop is obeyed at connect, an unreadable one fails closed).

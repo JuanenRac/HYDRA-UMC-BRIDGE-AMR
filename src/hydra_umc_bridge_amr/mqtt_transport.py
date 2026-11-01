@@ -41,7 +41,7 @@ from hydra_umc_sdk.bridge_transport import connect_with_retry
 from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
 
 from .coordinator import AmrCoordinator, AmrDispatch
-from .global_stop import GlobalStopGuard, follow_on_connect, process_wide_guard
+from hydra_umc_sdk.global_stop import GlobalStopGuard, follow_on_connect, process_wide_guard
 
 _LOG = logging.getLogger(__name__)
 

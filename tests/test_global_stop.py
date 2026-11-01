@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from hydra_umc_bridge_amr import AmrDispatch, Vda5050Publisher, Vda5050Target
-from hydra_umc_bridge_amr.global_stop import DEFAULT_TOPIC, GlobalStopGuard, GlobalStopSettings, process_wide_guard, settings_from_environment
+from hydra_umc_sdk.global_stop import DEFAULT_TOPIC, GlobalStopGuard, GlobalStopSettings, process_wide_guard, settings_from_environment
 
 TARGET = Vda5050Target("vda5050", "v2", "hydra-umc", "amr-1")
 SAFE_STOP = json.dumps({"schema_version": "1.0", "state": "SAFE_STOP", "source": "hydra-umc-server"}).encode()
