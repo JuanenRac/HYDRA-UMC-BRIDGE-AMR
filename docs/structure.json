@@ -32,6 +32,19 @@
           }
         },
         {
+          "name": "job_entry.py",
+          "desc": {
+            "en": "receives the jobs of `cmd/job` and publishes what the gate accepts (off by default)",
+            "es": "recibe los trabajos de `cmd/job` y publica lo que acepta la puerta (apagado por defecto)",
+            "de": "nimmt die Jobs von `cmd/job` an und sendet, was das Gate erlaubt (standardmäßig aus)",
+            "fr": "reçoit les jobs de `cmd/job` et publie ce que la porte accepte (désactivé par défaut)",
+            "it": "riceve i job di `cmd/job` e pubblica ciò che il gate accetta (spento per impostazione predefinita)",
+            "ja": "`cmd/job` のジョブを受け取り、ゲートが許可したものを発行（既定はオフ）",
+            "zh": "接收 `cmd/job` 的作业并发布闸门放行的内容（默认关闭）",
+            "pt": "recebe os trabalhos de `cmd/job` e publica o que a porta aceita (desligado por predefinição)"
+          }
+        },
+        {
           "name": "mqtt_transport.py",
           "desc": {
             "en": "VDA 5050 publisher and the MQTT client",

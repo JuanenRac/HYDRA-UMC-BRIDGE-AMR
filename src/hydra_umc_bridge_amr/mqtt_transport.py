@@ -82,6 +82,7 @@ def open_mqtt_client(
     connack_timeout_seconds: float = 10.0,
     observer: "Observer | None" = None,
     global_stop: GlobalStopGuard | None = None,
+    job_entry: "JobEntryLike | None" = None,
 ) -> MqttPublisher:
     """Open a real MQTT connection. The only place this module imports paho-mqtt.
 
@@ -131,6 +132,10 @@ def open_mqtt_client(
         else:
             if observer is not None:
                 client.subscribe(observer.subscriptions())  # type: ignore[attr-defined]
+            if job_entry is not None:
+                subscriptions = job_entry.subscriptions()
+                if subscriptions:
+                    client.subscribe(subscriptions)  # type: ignore[attr-defined]
             if follow is not None:
                 follow(client)
         answered.set()
@@ -140,11 +145,13 @@ def open_mqtt_client(
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    if observer is not None or follow is not None:
+    if observer is not None or follow is not None or job_entry is not None:
 
         def on_message(_client: object, _userdata: object, message: object) -> None:
             if follow is not None and message.topic == guard.topic:  # type: ignore[attr-defined]
                 guard.observe(bytes(message.payload))  # type: ignore[attr-defined]  # retained or not: it is the state
+            elif job_entry is not None and job_entry.handles(message.topic):  # type: ignore[attr-defined]
+                job_entry.on_message(client, message.topic, bytes(message.payload), retained=bool(getattr(message, "retain", False)))  # type: ignore[attr-defined]
             elif observer is not None:
                 observer.on_message(message.topic, bytes(message.payload))  # type: ignore[attr-defined]
 
@@ -163,6 +170,14 @@ def open_mqtt_client(
         client.loop_stop()
         raise RuntimeError(f"the MQTT broker refused the connection: {refusal[0]}")
     return client
+
+
+class JobEntryLike(Protocol):
+    """What `open_mqtt_client` needs of the job entry (`AmrJobEntry`)."""
+
+    def subscriptions(self) -> list[tuple[str, int]]: ...
+    def handles(self, topic: str) -> bool: ...
+    def on_message(self, client: MqttPublisher, topic: str, payload: bytes, *, retained: bool = False) -> object: ...
 
 
 class Observer(Protocol):

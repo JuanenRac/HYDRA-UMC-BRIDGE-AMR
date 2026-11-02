@@ -233,6 +233,7 @@ bash build.sh
 HYDRA-UMC-BRIDGE-AMR/
 ├── src/hydra_umc_bridge_amr/
 │   ├── coordinator.py             converte um trabalho numa ordem local do AMR, nunca movimento bruto; FrameTransform
+│   ├── job_entry.py               recebe os trabalhos de `cmd/job` e publica o que a porta aceita (desligado por predefinição)
 │   ├── mqtt_transport.py          publicador VDA 5050 e o cliente MQTT
 │   ├── observer.py                transforma `state` e `connection` do AGV num estado de máquina
 │   └── simulated_amr.py           tabela de que ação é legal a partir de que estado

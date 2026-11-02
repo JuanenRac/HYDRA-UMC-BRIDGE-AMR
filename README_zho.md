@@ -233,6 +233,7 @@ bash build.sh
 HYDRA-UMC-BRIDGE-AMR/
 ├── src/hydra_umc_bridge_amr/
 │   ├── coordinator.py             把任务转为 AMR 本地命令，绝不发原始运动；FrameTransform
+│   ├── job_entry.py               接收 `cmd/job` 的作业并发布闸门放行的内容（默认关闭）
 │   ├── mqtt_transport.py          VDA 5050 发布器与 MQTT 客户端
 │   ├── observer.py                把 AGV 的 `state` 和 `connection` 转为机器状态
 │   └── simulated_amr.py           各状态下允许哪些动作的表
