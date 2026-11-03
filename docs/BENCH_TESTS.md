@@ -24,7 +24,13 @@ Every test below is **not executed**: the bridge has run against the VDA 5050 em
 | 5 | Send a global stop while the vehicle drives. | The vehicle pauses within the time its controller documents. | not executed |
 | 6 | Stop the vehicle controller. | The bridge reports the vehicle as unavailable (Last Will or stale state) and refuses new jobs. | not executed |
 | 7 | Stop the broker for 30 s and start it again. | The bridge reconnects by itself and publishes a fresh state. | not executed |
+| 8 | With `HYDRA_UMC_AMR_PLANT_GRAPH` set to the real graph, send a job with `goal_node` three nodes away. | One order with every node and edge of the shortest route; the vehicle drives it lane by lane and the state shows each node reached. | not executed |
+| 9 | Send a job with a `goal_node` that is not in the graph, and one while the vehicle reports no `lastNodeId`. | Both are refused with a reason; nothing is sent to the vehicle. | not executed |
+| 10 | With `HYDRA_UMC_AMR_PUBLISH_STATE=1`, read `hydra/bridges/amr/state` while the vehicle drives and discharges. | The battery, position and error counts follow the vehicle and the data lake shows them; with the vehicle switched off nothing new is published. | not executed |
+| 11 | With `HYDRA_UMC_AMR_PUBLISH_OPCUA=1`, read `hydra/bridges/amr/opcua` through the gateway of the plant. | A SCADA browses `Fleet/<vehicle>/...` with the right types, read-only. | not executed |
+| 12 | With `HYDRA_UMC_AMR_ZONE_INTERLOCK=1`, occupy the zone of the next node of a driving vehicle. | The vehicle pauses before the zone; when the zone is freed it goes on. A vehicle paused by hand stays paused. | not executed |
+| 13 | Stop publishing the occupancy of the zones while a vehicle approaches a zone. | After the maximum age the vehicle is paused (default `pause`), and goes on when the occupancy is heard again and free. | not executed |
 
 ## What this bench cannot show
 
-Planning orders from a plant graph, publishing the battery and the errors to a data store, exposing the fleet to an OPC UA client and pausing a vehicle from a zone interlock are not part of the bridge yet; there is nothing to test for them.
+Whether the real fleet manager accepts a multi-node order the way the schema check says, how an OPC UA server reads `hydra/bridges/amr/opcua` (the server does not subscribe to it yet) and which service publishes the occupancy of the zones (the safety service does not publish `hydra/safety/zones/occupied` yet) are not part of this bench.

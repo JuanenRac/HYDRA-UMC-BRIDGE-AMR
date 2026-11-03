@@ -76,6 +76,7 @@ class Vda5050Observer:
         self._lock = threading.Lock()
         self._state: dict | None = None
         self._state_at = 0.0
+        self._state_wall_ms = 0
         self._connection: str | None = None
 
     @property
@@ -111,6 +112,7 @@ class Vda5050Observer:
             else:
                 self._state = body
                 self._state_at = self._clock()
+                self._state_wall_ms = int(time.time() * 1000)
 
     @property
     def connection_state(self) -> str | None:
@@ -122,6 +124,33 @@ class Vda5050Observer:
         with self._lock:
             node = self._state.get("lastNodeId") if self._state else None
         return node if isinstance(node, str) and node else None
+
+    def snapshot(self) -> tuple[dict, int] | None:
+        """A copy of the last `state` message and the wall-clock milliseconds at which it arrived; None when it is unknown, offline or older than `max_age_seconds`."""
+        with self._lock:
+            state, state_at, wall = self._state, self._state_at, self._state_wall_ms
+            connection = self._connection
+        if state is None or (connection is not None and connection != "ONLINE") or self._clock() - state_at > self._max_age:
+            return None
+        return json.loads(json.dumps(state)), wall
+
+    @property
+    def next_node_id(self) -> str | None:
+        """The node the vehicle is going to reach next (the lowest sequenceId of its `nodeStates`), None when it has none or the state is not current."""
+        seen = self.snapshot()
+        nodes = seen[0].get("nodeStates") if seen else None
+        if not isinstance(nodes, list):
+            return None
+        best: tuple[int, str] | None = None
+        for node in nodes:
+            if not isinstance(node, dict) or not isinstance(node.get("nodeId"), str):
+                continue
+            sequence = node.get("sequenceId")
+            if not isinstance(sequence, int) or isinstance(sequence, bool):
+                continue
+            if best is None or sequence < best[0]:
+                best = (sequence, node["nodeId"])
+        return best[1] if best else None
 
     def machine_state(self) -> MachineState:
         with self._lock:

@@ -40,7 +40,7 @@ from typing import Callable, Protocol
 from hydra_umc_sdk.bridge_transport import connect_with_retry
 from hydra_umc_sdk.mqtt_connection import apply_connection_settings, settings_from_env
 
-from .coordinator import AmrCoordinator, AmrDispatch
+from .coordinator import AmrCoordinator, AmrDispatch, AmrRouteDispatch
 from hydra_umc_sdk.global_stop import GlobalStopGuard, follow_on_connect, process_wide_guard
 
 _LOG = logging.getLogger(__name__)
@@ -83,6 +83,8 @@ def open_mqtt_client(
     observer: "Observer | None" = None,
     global_stop: GlobalStopGuard | None = None,
     job_entry: "JobEntryLike | None" = None,
+    zone_interlock: "ZoneInterlockLike | None" = None,
+    state_reporter: "StateReporterLike | None" = None,
 ) -> MqttPublisher:
     """Open a real MQTT connection. The only place this module imports paho-mqtt.
 
@@ -104,6 +106,9 @@ def open_mqtt_client(
     `global_stop` is the guard that follows the global stop of the server (see `global_stop.py`); when it is not given the one of this process is used
     (`HYDRA_UMC_AMR_GLOBAL_STOP=1` switches it on, default off). When it is on, the client subscribes to the announcement after every reconnect and feeds the
     guard, which the publisher asks before it sends anything that moves the vehicle.
+
+    `zone_interlock` (zone_interlock.py) subscribes to the occupancy of the zones and pauses a vehicle about to enter an occupied one; `state_reporter`
+    (state_report.py) publishes the observed state after each state message. Both are off unless their own switch is on.
     """
 
     if password is not None and username is None:
@@ -136,6 +141,10 @@ def open_mqtt_client(
                 subscriptions = job_entry.subscriptions()
                 if subscriptions:
                     client.subscribe(subscriptions)  # type: ignore[attr-defined]
+            if zone_interlock is not None:
+                subscriptions = zone_interlock.subscriptions()
+                if subscriptions:
+                    client.subscribe(subscriptions)  # type: ignore[attr-defined]
             if follow is not None:
                 follow(client)
         answered.set()
@@ -145,15 +154,22 @@ def open_mqtt_client(
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    if observer is not None or follow is not None or job_entry is not None:
+    if observer is not None or follow is not None or job_entry is not None or zone_interlock is not None:
 
         def on_message(_client: object, _userdata: object, message: object) -> None:
             if follow is not None and message.topic == guard.topic:  # type: ignore[attr-defined]
                 guard.observe(bytes(message.payload))  # type: ignore[attr-defined]  # retained or not: it is the state
             elif job_entry is not None and job_entry.handles(message.topic):  # type: ignore[attr-defined]
                 job_entry.on_message(client, message.topic, bytes(message.payload), retained=bool(getattr(message, "retain", False)))  # type: ignore[attr-defined]
+            elif zone_interlock is not None and zone_interlock.handles(message.topic):  # type: ignore[attr-defined]
+                zone_interlock.on_message(message.topic, bytes(message.payload))  # type: ignore[attr-defined]
+                zone_interlock.step(client)  # type: ignore[attr-defined]
             elif observer is not None:
                 observer.on_message(message.topic, bytes(message.payload))  # type: ignore[attr-defined]
+                if zone_interlock is not None:
+                    zone_interlock.step(client)  # type: ignore[attr-defined]
+                if state_reporter is not None:
+                    state_reporter.maybe_publish(client)  # type: ignore[attr-defined]
 
         client.on_message = on_message
 
@@ -178,6 +194,21 @@ class JobEntryLike(Protocol):
     def subscriptions(self) -> list[tuple[str, int]]: ...
     def handles(self, topic: str) -> bool: ...
     def on_message(self, client: MqttPublisher, topic: str, payload: bytes, *, retained: bool = False) -> object: ...
+
+
+class ZoneInterlockLike(Protocol):
+    """What `open_mqtt_client` needs of the zone interlock (`ZoneInterlock`)."""
+
+    def subscriptions(self) -> list[tuple[str, int]]: ...
+    def handles(self, topic: str) -> bool: ...
+    def on_message(self, topic: str, payload: bytes) -> None: ...
+    def step(self, client: MqttPublisher) -> object: ...
+
+
+class StateReporterLike(Protocol):
+    """What `open_mqtt_client` needs of the state reporter (`StateReporter`)."""
+
+    def maybe_publish(self, client: MqttPublisher) -> bool: ...
 
 
 class Observer(Protocol):
@@ -233,6 +264,40 @@ class Vda5050Publisher:
         with self._lock:
             self._header_ids[topic] = self._header_ids.get(topic, 0) + 1
             return self._header_ids[topic]
+
+    def publish_route(self, client: MqttPublisher, target: Vda5050Target, route: AmrRouteDispatch, order_id: str | None = None) -> PublishResult:
+        """Publish the multi-node order of a route the coordinator accepted. A refused route never reaches the network, and a global stop blocks it like any movement."""
+        if not route.accepted:
+            return PublishResult(False, route.reason)
+        if self._global_stop.blocks():
+            return PublishResult(False, self._global_stop.reason())
+        if not route.nodes or not route.map_id:
+            return PublishResult(False, "the route has no nodes or no map_id - refusing to publish a non-spec-compliant order")
+        topic = target.topic("order")
+        header_id = self._next_header_id(topic)
+        payload = {
+            "headerId": header_id,
+            "timestamp": self._clock(),
+            "version": target.protocol_version,
+            "manufacturer": target.manufacturer,
+            "serialNumber": target.serial_number,
+            "orderId": order_id or f"hydra-umc-{self._session}-{header_id}",
+            "orderUpdateId": 0,
+            "nodes": list(route.nodes),
+            "edges": list(route.edges),
+        }
+        try:
+            message = json.dumps(payload, allow_nan=False)
+        except ValueError as error:
+            return PublishResult(False, f"the message cannot be encoded as JSON: {error}", topic)
+        try:
+            result = client.publish(topic, message)
+        except OSError as error:
+            return PublishResult(False, f"MQTT publish failed: {error}", topic)
+        rc = getattr(result, "rc", 0)
+        if rc != 0:
+            return PublishResult(False, f"MQTT publish not queued (rc={rc})", topic)
+        return PublishResult(True, "queued for MQTT delivery (rc=0) - not a confirmed AGV acceptance", topic)
 
     def publish(
         self,

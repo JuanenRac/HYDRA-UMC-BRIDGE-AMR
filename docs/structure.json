@@ -71,6 +71,19 @@
           }
         },
         {
+          "name": "plant_graph.py",
+          "desc": {
+            "en": "plant graph (JSON) and the shortest route as one order",
+            "es": "grafo de la planta (JSON) y la ruta más corta como una orden",
+            "de": "Anlagengraph (JSON) und kürzeste Route als ein Auftrag",
+            "fr": "graphe de l'usine (JSON) et plus court chemin en un ordre",
+            "it": "grafo dell'impianto (JSON) e percorso più breve come un ordine",
+            "ja": "工場グラフ（JSON）と最短経路を1つの命令に",
+            "zh": "工厂图（JSON）及作为单个订单的最短路径",
+            "pt": "grafo da fábrica (JSON) e caminho mais curto como uma ordem"
+          }
+        },
+        {
           "name": "simulated_amr.py",
           "desc": {
             "en": "table of which action is legal from which state",
@@ -81,6 +94,32 @@
             "ja": "どの状態からどの動作が許されるかの表",
             "zh": "各状态下允许哪些动作的表",
             "pt": "tabela de que ação é legal a partir de que estado"
+          }
+        },
+        {
+          "name": "state_report.py",
+          "desc": {
+            "en": "battery, errors, position for the data lake and OPC UA (off by default)",
+            "es": "batería, errores, posición para el data lake y OPC UA (apagado por defecto)",
+            "de": "Akku, Fehler, Position für Data Lake und OPC UA (standardmäßig aus)",
+            "fr": "batterie, erreurs, position pour data lake et OPC UA (désactivé par défaut)",
+            "it": "batteria, errori, posizione per data lake e OPC UA (spento di default)",
+            "ja": "バッテリー・エラー・位置をデータレイクと OPC UA へ（既定はオフ）",
+            "zh": "电池、错误、位置，供数据湖和 OPC UA（默认关闭）",
+            "pt": "bateria, erros, posição para data lake e OPC UA (desligado por predefinição)"
+          }
+        },
+        {
+          "name": "zone_interlock.py",
+          "desc": {
+            "en": "pauses a vehicle before an occupied zone (off by default)",
+            "es": "pausa un vehículo ante una zona ocupada (apagado por defecto)",
+            "de": "pausiert ein Fahrzeug vor besetzter Zone (standardmäßig aus)",
+            "fr": "met un véhicule en pause avant une zone occupée (désactivé par défaut)",
+            "it": "mette in pausa un veicolo prima di una zona occupata (spento di default)",
+            "ja": "占有ゾーンの手前で車両を一時停止（既定はオフ）",
+            "zh": "在被占用区域前暂停车辆（默认关闭）",
+            "pt": "pausa um veículo antes de uma zona ocupada (desligado por predefinição)"
           }
         }
       ]

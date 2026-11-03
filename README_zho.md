@@ -113,8 +113,11 @@ flowchart LR
 * ✅ **非变更式构建/测试:** `build-test.bat`/`.sh` 编译源码并运行确定性单元测试,不改变版本或 CHANGELOG。*(已实现,见下方"构建与发布")*
 * 🔜 **厂商专属的车队管理器 REST/WebSocket 适配器**(面向非 VDA 5050 原生的车队平台)——只有在选定并测试了该平台之后才会引入。*(计划中)*
 * ✅ **观测到的机器状态与重启后不重复的订单 ID：** `AmrCoordinator.dispatch()` 接受车队管理器上报的车辆状态，共享闸门使用它而不是作业中写的 `machine_state`（任何人都能在代理上发布的消息）；`Vda5050Publisher` 给每个订单的 `orderId` 加上自己的令牌，这样重启后 `headerId` 从头计数时不会重用先前订单的 ID（VDA 5050 会拒绝）。*（已实现，已在 `tests/test_observed_and_order_ids.py` 中测试）*
-* ✅ **线路上的 VDA 5050 名称、代理接受的客户端和会倾听的观察者:** 内部的 `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` 以区分大小写的 VDA 5050 动作类型 `cancelOrder` / `pick` / `drop` 发出(此前 `CANCEL_ORDER` 原样发出,AGV 不会把它识别为取消),移动只是它的目的地节点,不带臆造的动作类型;`actionId` 和 `nodeId` 与 `orderId` 一样带有会话令牌;`header_id` 和 `timestamp_iso` 可以省略(发布者按主题计数并加上 UTC 时间),给出时会被校验;溢出的坐标、非有限数值或 `FrameTransform.bounds` 之外的点会被拒绝(`allow_nan=False`)。`open_mqtt_client()` 接受 `client_id`(代理按其前缀认证),使用回调 API v2,并等待代理的应答,而不是返回一个无法发布的客户端;配合 `Vda5050Observer` 时,它订阅 AGV 的 `state` 和 `connection` 主题,并推导出闸门使用的机器状态(过期、不是 ONLINE 或不在 AUTOMATIC 模式时为 OFFLINE;否则为 SAFE_STOP、FAULT、HOLDING、RUNNING 或 IDLE)。*(已实现,已用替身和模拟器测试;从未针对真实的 AGV 或车队管理器运行,并且从 AGV 所在节点出发的路线(两个节点加一条边,需要工厂图)尚未构建,因此真实的 AGV 会拒绝这些只有一个目的地节点的订单)*
+* ✅ **线路上的 VDA 5050 名称、代理接受的客户端和会倾听的观察者:** 内部的 `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` 以区分大小写的 VDA 5050 动作类型 `cancelOrder` / `pick` / `drop` 发出(此前 `CANCEL_ORDER` 原样发出,AGV 不会把它识别为取消),移动只是它的目的地节点,不带臆造的动作类型;`actionId` 和 `nodeId` 与 `orderId` 一样带有会话令牌;`header_id` 和 `timestamp_iso` 可以省略(发布者按主题计数并加上 UTC 时间),给出时会被校验;溢出的坐标、非有限数值或 `FrameTransform.bounds` 之外的点会被拒绝(`allow_nan=False`)。`open_mqtt_client()` 接受 `client_id`(代理按其前缀认证),使用回调 API v2,并等待代理的应答,而不是返回一个无法发布的客户端;配合 `Vda5050Observer` 时,它订阅 AGV 的 `state` 和 `connection` 主题,并推导出闸门使用的机器状态(过期、不是 ONLINE 或不在 AUTOMATIC 模式时为 OFFLINE;否则为 SAFE_STOP、FAULT、HOLDING、RUNNING 或 IDLE)。*(已实现,已用替身和模拟器测试;从未针对真实的 AGV 或车队管理器运行,没有工厂图时作业仍是只有一个目的地节点的订单，真实的 AGV 可能会拒绝；有工厂图时见下面的路线条目)*
 * ✅ **跟随全局停止（默认关闭）:** 设置 `HYDRA_UMC_AMR_GLOBAL_STOP=1` 后，桥接读取服务器在 `hydra/swarm/safety/estop` 上的保留通知；通知为 `SAFE_STOP` 或无法读取时，它会带原因拒绝：所有使车辆移动的订单（取消和暂停放行）。停止命令和只读请求照常工作，只有 `READY` 才能解除拒绝。*（已实现，已对真实代理测试；从未与真实服务器一起运行）*
+* 🗺️ **工厂图上的路线,单个多节点订单(没有图文件时关闭):** `HYDRA_UMC_AMR_PLANT_GRAPH` 指向包含节点、有向边和可选区域的 JSON 文件时,带 `goal_node` 的作业会从车辆最后报告的节点(`lastNodeId`)到该节点按最短路径规划,并作为包含所有节点和边的一个 VDA 5050 订单发布,经过与任何运动相同的闸门和全局停止;最后节点未知、目标未知或无路线都会被拒绝。`plant_graph.py`。*(已实现,已用替身测试;从未针对真实的 AGV 运行)*
+* 📊 **面向数据湖和 OPC UA 的车辆状态(默认关闭):** 设置 `HYDRA_UMC_AMR_PUBLISH_STATE=1` 后,桥接会把车辆的电池、错误、位置和机器状态发布到 `hydra/bridges/amr/state`,遥测收集器已经把它读入数据湖(异常检测器也由此读取);设置 `HYDRA_UMC_AMR_PUBLISH_OPCUA=1` 后,同样的读数会以带类型的只读节点列表发布到 `hydra/bridges/amr/opcua`,供网关展示给 SCADA。未知或过期的状态不发布任何内容。`state_report.py`。*(已实现,已用替身测试;OPC UA 服务器尚未读取该主题,也从未针对真实的 AGV 运行)*
+* 🚧 **区域互锁(默认关闭):** 设置 `HYDRA_UMC_AMR_ZONE_INTERLOCK=1` 且工厂图的节点标明所属区域后,下一个节点位于被占用区域的车辆会收到 `startPause`;区域空闲后桥接通过闸门发送 `stopPause`,且只发给自己暂停的车辆。占用情况读取自 `hydra/safety/zones/occupied`;无法读取的占用情况视为已占用,除非设置 `HYDRA_UMC_AMR_ZONE_UNKNOWN=ignore`。`zone_interlock.py`。*(已实现,已用替身测试;安全服务尚未发布该主题,也从未针对真实的 AGV 运行)*
 
 ## 🔒 安全与防护
 
@@ -189,6 +192,7 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | 任务到订单的映射、刚体坐标变换、ID、边界情况 |
 | `test_vda5050_schemas.py` | - | 每条消息都按官方 VDA 5050 2.0.0 模式验证 |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | 真实的协调器和发布器对 MQTT 总线上形态级的 VDA 5050 车辆 |
+| `test_route_telemetry_interlock.py` | - | 工厂图及其多节点订单、面向数据湖和 OPC UA 的状态报告、区域互锁 |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_simulated_amr.py` | - | 针对假 MQTT 客户端的发布器、环境凭据、恶意输入、状态表 |
 
 CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片，并使用 SDK 副本运行测试。
@@ -236,7 +240,10 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── job_entry.py               接收 `cmd/job` 的作业并发布闸门放行的内容（默认关闭）
 │   ├── mqtt_transport.py          VDA 5050 发布器与 MQTT 客户端
 │   ├── observer.py                把 AGV 的 `state` 和 `connection` 转为机器状态
-│   └── simulated_amr.py           各状态下允许哪些动作的表
+│   ├── plant_graph.py             工厂图（JSON）及作为单个订单的最短路径
+│   ├── simulated_amr.py           各状态下允许哪些动作的表
+│   ├── state_report.py            电池、错误、位置，供数据湖和 OPC UA（默认关闭）
+│   └── zone_interlock.py          在被占用区域前暂停车辆（默认关闭）
 ├── tests/                         110 项测试（含 VDA 5050 模拟器与官方模式）
 ├── docs/                          桥接指南
 ├── tools/                         构建与测试运行器、版本提升、CI 校验、README 与图片的生成和检查

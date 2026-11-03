@@ -113,8 +113,11 @@ flowchart LR
 * ✅ **非破壊的なビルド/テスト:** `build-test.bat`/`.sh` はソースをコンパイルし、バージョンやCHANGELOGを変更せずに決定論的なユニットテストを実行する。*(実装済み、下記「ビルドとリリース」を参照)*
 * 🔜 **ベンダー固有のフリートマネージャー REST/WebSocket アダプター**（VDA 5050 ネイティブではないフリートプラットフォーム向け） —— そのプラットフォームが選定・テストされた後にのみ導入される。*(計画中)*
 * ✅ **観測した機器の状態と、再起動後も重複しないオーダー ID:** `AmrCoordinator.dispatch()` は、フリートマネージャーが車両について報告した状態を受け取り、共有ゲートはジョブに書かれた `machine_state`（ブローカー上の誰でも発行できるメッセージ）の代わりにそれを使います。`Vda5050Publisher` は各オーダーの `orderId` に固有のトークンを付けるので、`headerId` を最初から数え直す再起動でも以前のオーダーの ID を再利用しません（VDA 5050 はそれを拒否します）。*（実装済み、`tests/test_observed_and_order_ids.py` でテスト済み）*
-* ✅ **ワイヤ上のVDA 5050の名前、ブローカーが受け入れるクライアント、聞き取るオブザーバー:** 内部名の `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` は、大文字小文字を区別するVDA 5050のアクションタイプ `cancelOrder` / `pick` / `drop` として送られます(以前は `CANCEL_ORDER` がそのまま送られ、AGVはキャンセルとして認識しません)。移動は目的地ノードだけで、作り出したアクションタイプは付きません。`actionId` と `nodeId` は `orderId` と同様にセッショントークンを持ちます。`header_id` と `timestamp_iso` は省略でき(パブリッシャーがトピックごとに数え、UTCの時刻を付ける)、指定された場合は検証されます。オーバーフローする座標、有限でない数値、`FrameTransform.bounds` の外の点は拒否されます(`allow_nan=False`)。`open_mqtt_client()` は `client_id`(ブローカーはそのプレフィックスで認証)を受け取り、コールバックAPI v2を使い、発行できないクライアントを返す代わりにブローカーの応答を待ちます。`Vda5050Observer` を渡すとAGVの `state` と `connection` トピックを購読し、ゲートが使う機械状態を導きます(古い、ONLINEでない、AUTOMATICモードでない場合はOFFLINE。それ以外はSAFE_STOP、FAULT、HOLDING、RUNNING、IDLE)。*(実装済み、ダブルとエミュレーターでテスト済み。実際のAGVやフリートマネージャーでは未実行で、AGVが今いるノードから始まる経路(2つのノードと1本のエッジ、工場のグラフが必要)はまだ作られないため、実際のAGVはこの単一の目的地ノードの指示を拒否します)*
+* ✅ **ワイヤ上のVDA 5050の名前、ブローカーが受け入れるクライアント、聞き取るオブザーバー:** 内部名の `CANCEL_ORDER` / `PICK_LOAD` / `DROP_LOAD` は、大文字小文字を区別するVDA 5050のアクションタイプ `cancelOrder` / `pick` / `drop` として送られます(以前は `CANCEL_ORDER` がそのまま送られ、AGVはキャンセルとして認識しません)。移動は目的地ノードだけで、作り出したアクションタイプは付きません。`actionId` と `nodeId` は `orderId` と同様にセッショントークンを持ちます。`header_id` と `timestamp_iso` は省略でき(パブリッシャーがトピックごとに数え、UTCの時刻を付ける)、指定された場合は検証されます。オーバーフローする座標、有限でない数値、`FrameTransform.bounds` の外の点は拒否されます(`allow_nan=False`)。`open_mqtt_client()` は `client_id`(ブローカーはそのプレフィックスで認証)を受け取り、コールバックAPI v2を使い、発行できないクライアントを返す代わりにブローカーの応答を待ちます。`Vda5050Observer` を渡すとAGVの `state` と `connection` トピックを購読し、ゲートが使う機械状態を導きます(古い、ONLINEでない、AUTOMATICモードでない場合はOFFLINE。それ以外はSAFE_STOP、FAULT、HOLDING、RUNNING、IDLE)。*(実装済み、ダブルとエミュレーターでテスト済み。実際のAGVやフリートマネージャーでは未実行で、工場のグラフがない場合、ジョブは単一の目的地ノードの指示のままで、実際のAGVは拒否することがあります。グラフがある場合は下の経路の項目を参照)*
 * ✅ **グローバル停止に従う（既定ではオフ）:** `HYDRA_UMC_AMR_GLOBAL_STOP=1` で、ブリッジは `hydra/swarm/safety/estop` のサーバーの保持通知を読みます。それが `SAFE_STOP` の間、または読み取れない間は、理由を付けて次を拒否します：車両を動かすすべてのオーダー（キャンセルと一時停止は通す）。停止と読み取り専用の要求は動き続け、拒否を解くのは `READY` だけです。*（実装済み、実際のブローカーに対してテスト済み。実際のサーバーでは未実行）*
+* 🗺️ **工場グラフ上の経路、1つの複数ノード命令(グラフファイルがなければオフ):** `HYDRA_UMC_AMR_PLANT_GRAPH` がノード・有向エッジ・任意のゾーンを持つ JSON ファイルを指すと、`goal_node` を持つジョブは、車両が最後に報告したノード(`lastNodeId`)からそのノードまでの最短経路で計画され、すべてのノードとエッジを含む1つの VDA 5050 命令として、他の動作と同じゲートと同じグローバル停止を通して発行されます。最後のノードが不明、目的地が不明、経路なしは拒否されます。`plant_graph.py`。*(実装済み、ダブルでテスト済み。実際のAGVでは未実行)*
+* 📊 **データレイクと OPC UA 向けの車両の状態(既定はオフ):** `HYDRA_UMC_AMR_PUBLISH_STATE=1` でブリッジは車両のバッテリー、エラー、位置、マシン状態を `hydra/bridges/amr/state` に発行し、テレメトリコレクターがすでにデータレイクへ読み込みます(異常検知もこれを使います)。`HYDRA_UMC_AMR_PUBLISH_OPCUA=1` では同じ値が型付きの読み取り専用ノード一覧として `hydra/bridges/amr/opcua` に出て、ゲートウェイが SCADA に見せられます。不明または古い状態は何も発行しません。`state_report.py`。*(実装済み、ダブルでテスト済み。OPC UA サーバーはまだこのトピックを読まず、実際のAGVでは未実行)*
+* 🚧 **ゾーンのインターロック(既定はオフ):** `HYDRA_UMC_AMR_ZONE_INTERLOCK=1` と、ノードがゾーン名を持つ工場グラフがあると、次のノードが占有中のゾーンにある車両には `startPause` を送り、ゾーンが空けばゲートを通して `stopPause` を、自分が一時停止した車両にだけ送ります。占有状況は `hydra/safety/zones/occupied` から読み、読めない場合は `HYDRA_UMC_AMR_ZONE_UNKNOWN=ignore` でない限り占有扱いです。`zone_interlock.py`。*(実装済み、ダブルでテスト済み。安全サービスはまだこのトピックを発行せず、実際のAGVでは未実行)*
 
 ## 🔒 セキュリティと安全
 
@@ -189,6 +192,7 @@ Vda5050Publisher().publish(client, target, None, None, dispatch)   # a rejected 
 | `test_coordinator.py`, `test_observed_and_order_ids.py`, `test_edge_cases.py` | - | ジョブから命令への変換、剛体座標変換、ID、境界ケース |
 | `test_vda5050_schemas.py` | - | 全メッセージを公式 VDA 5050 2.0.0 スキーマで検証 |
 | `test_vda5050_emulator.py`, `vda5050_emulator.py` | - | 実物のコーディネーターとパブリッシャーを、MQTT バス上の形式レベルの VDA 5050 車両と突き合わせ |
+| `test_route_telemetry_interlock.py` | - | 工場グラフと複数ノード命令、データレイクと OPC UA 向けの状態レポート、ゾーンのインターロック |
 | `test_mqtt_transport.py`, `test_mqtt_environment.py`, `test_hardening.py`, `test_simulated_amr.py` | - | 偽の MQTT クライアントに対するパブリッシャー、環境の認証情報、悪意ある入力、状態表 |
 
 CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査し、SDK のチェックアウトを使ってテストを実行します。
@@ -236,7 +240,10 @@ HYDRA-UMC-BRIDGE-AMR/
 │   ├── job_entry.py               `cmd/job` のジョブを受け取り、ゲートが許可したものを発行（既定はオフ）
 │   ├── mqtt_transport.py          VDA 5050 の発行側と MQTT クライアント
 │   ├── observer.py                AGV の `state` と `connection` を機械状態に変換
-│   └── simulated_amr.py           どの状態からどの動作が許されるかの表
+│   ├── plant_graph.py             工場グラフ（JSON）と最短経路を1つの命令に
+│   ├── simulated_amr.py           どの状態からどの動作が許されるかの表
+│   ├── state_report.py            バッテリー・エラー・位置をデータレイクと OPC UA へ（既定はオフ）
+│   └── zone_interlock.py          占有ゾーンの手前で車両を一時停止（既定はオフ）
 ├── tests/                         110 件（VDA 5050 エミュレーターと公式スキーマ付き）
 ├── docs/                          ブリッジガイド
 ├── tools/                         ビルド・テスト実行、バージョン引き上げ、CI 検証、README と図の生成・検査

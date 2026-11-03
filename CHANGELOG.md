@@ -4,6 +4,14 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A job can name a goal node and get a route over the lanes of the plant:** with `HYDRA_UMC_AMR_PLANT_GRAPH` pointing to a JSON graph (nodes, directed edges, optional zones), a job with `goal_node` is planned from the node the vehicle last reported to that node on the shortest route and published as one VDA 5050 order with every node and edge, through the same gate and global stop as any movement. A vehicle that did not report its last node, an unknown node or no route is refused. `plant_graph.py`, `AmrCoordinator.dispatch_route`, `Vda5050Publisher.publish_route`.
+
+- **The state of the vehicle can be published for the data lake and for OPC UA, off by default:** `HYDRA_UMC_AMR_PUBLISH_STATE=1` publishes the battery, errors, position and machine state on `hydra/bridges/amr/state` (read by the telemetry collector) and `HYDRA_UMC_AMR_PUBLISH_OPCUA=1` the same readings as typed read-only nodes on `hydra/bridges/amr/opcua`, at most once per `HYDRA_UMC_AMR_STATE_INTERVAL_S` (default 5 seconds); an unknown or stale state publishes nothing. `state_report.py`.
+
+- **A zone interlock pauses a vehicle about to enter an occupied zone, off by default:** `HYDRA_UMC_AMR_ZONE_INTERLOCK=1` sends `startPause` when the next node of a vehicle lies in an occupied zone and `stopPause` through the gate when it is free, only to a vehicle it paused itself; an occupancy that cannot be read counts as occupied unless `HYDRA_UMC_AMR_ZONE_UNKNOWN=ignore`. `zone_interlock.py`.
+
+- **Tests and bench script:** `tests/test_route_telemetry_interlock.py` covers the three above; `docs/BENCH_TESTS.md` lists the steps that need a real vehicle, all marked as not executed.
+
 ## [0.1.8] - The AMR bridge has an optional job entry point on hydra/bridges/amr/cmd/job (off by default) and a bench script that lists every test needing a real vehicle, all marked as not executed
 
 - **A script for the bench:** `docs/BENCH_TESTS.md` lists the steps, the setup and the expected result of the tests that need a real vehicle; every step is marked as not executed.

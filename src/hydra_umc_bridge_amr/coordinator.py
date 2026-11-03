@@ -5,8 +5,9 @@
 # =============================================================================
 """Map a correlated cell job onto a real AMR-local order, never raw motion.
 
-This module deliberately never plans a path or avoids an obstacle - it does
-exactly two real things: (1) a real, hand-checkable 2D rigid-body transform
+This module deliberately never avoids an obstacle - it does exactly two real
+things (a route over the lanes of the plant graph, `dispatch_route`, is optional
+and planned only when a graph is given; see plant_graph.py): (1) a real, hand-checkable 2D rigid-body transform
 from the factory's own shared coordinate frame into a specific AMR's local
 frame (every fleet has its own origin/heading on the factory floor), and
 (2) maps a job phase onto a minimal, VDA 5050-inspired order action name.
@@ -23,6 +24,8 @@ from dataclasses import dataclass
 
 from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, JobPhase, MachineState
 from hydra_umc_sdk.phase_coordinator import PhaseCoordinator
+
+from .plant_graph import PlantGraph
 
 
 @dataclass(frozen=True)
@@ -112,6 +115,20 @@ class AmrDispatch:
     # Real VDA 5050 channel this action belongs on - see AmrCoordinator's
     # own _INSTANT_ACTIONS comment for why this matters for interop, not
     # just labeling.
+    channel: str = "order"
+
+
+@dataclass(frozen=True)
+class AmrRouteDispatch:
+    """A movement planned on the plant graph: the nodes and edges of ONE VDA 5050 order, or the reason it was refused."""
+
+    accepted: bool
+    action: str
+    reason: str
+    route: tuple[str, ...] = ()
+    nodes: tuple[dict, ...] = ()
+    edges: tuple[dict, ...] = ()
+    map_id: str | None = None
     channel: str = "order"
 
 
@@ -242,6 +259,39 @@ class AmrCoordinator:
         decision = self._phases.decide(job, cell_state, observed_machine_state)
         channel = "instantActions" if action in self._INSTANT_ACTIONS else "order"
         return AmrDispatch(decision.accepted, action, decision.reason, local_x, local_y, map_id, channel=channel)
+
+    def dispatch_route(
+        self,
+        job: BridgeJob,
+        cell_state: CellState,
+        transform: FrameTransform,
+        graph: PlantGraph,
+        start_node: str | None,
+        observed_machine_state: MachineState | None = None,
+    ) -> AmrRouteDispatch:
+        """Gate a movement job that names `goal_node` and plan its route on the plant graph, from the node the vehicle last reported.
+
+        The gate is the one of every movement (cell READY, vehicle read as IDLE...). A vehicle whose last node is unknown or not in the graph is refused
+        (fail closed): the route would start from a guess.
+        """
+
+        action = self._phases.action_for(job.phase)
+        if action not in self._MOVEMENT_ACTIONS:
+            return AmrRouteDispatch(False, action or "none", "a route is only planned for a movement phase")
+        goal = job.parameters.get("goal_node")
+        if not isinstance(goal, str) or not goal:
+            return AmrRouteDispatch(False, action, "missing required parameter for a route: goal_node")
+        decision = self._phases.decide(job, cell_state, observed_machine_state)
+        if not decision.accepted:
+            return AmrRouteDispatch(False, action, decision.reason)
+        if not start_node:
+            return AmrRouteDispatch(False, action, "the vehicle did not report its last node: the route would start from a guess")
+        try:
+            route = graph.route(start_node, goal)
+            nodes, edges = graph.order_parts(route, transform.to_local, transform.map_id)
+        except ValueError as error:  # NoRouteError and the finite-number check of to_local
+            return AmrRouteDispatch(False, action, str(error))
+        return AmrRouteDispatch(True, action, decision.reason, tuple(route), tuple(nodes), tuple(edges), transform.map_id)
 
     def dispatch_all(self, job: BridgeJob, cell_state: CellState, transform: FrameTransform, observed_machine_state: MachineState | None = None) -> tuple[AmrDispatch, ...]:
         """Every dispatch the job asks for: one, or two for an ABORT configured as CANCEL_AND_PAUSE (cancelOrder, then startPause).

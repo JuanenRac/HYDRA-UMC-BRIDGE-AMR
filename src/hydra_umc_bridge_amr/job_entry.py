@@ -25,6 +25,7 @@ from hydra_umc_sdk.bridge_contract import CellState, MachineState
 from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake, read_job_message
 
 from .coordinator import AmrCoordinator, FrameTransform
+from .plant_graph import PlantGraph
 from .mqtt_transport import MqttPublisher, Vda5050Publisher, Vda5050Target
 
 _LOG = logging.getLogger(__name__)
@@ -55,9 +56,12 @@ class AmrJobEntry:
         *,
         enabled: bool | None = None,
         intake: JobIntake | None = None,
+        graph: PlantGraph | None = None,
+        last_node: Callable[[], str | None] | None = None,
     ) -> None:
         """`cell_state` and `machine_state` are read for every job (the state of this cell, and the state the AGV reported: `Vda5050Observer.machine_state`).
-        `enabled` None follows `HYDRA_UMC_AMR_JOB_ENTRY=1` (default off)."""
+        `enabled` None follows `HYDRA_UMC_AMR_JOB_ENTRY=1` (default off).
+        With a `graph` (see plant_graph.py) and `last_node` (`lambda: observer.last_node_id`), a movement job that names `goal_node` is planned on the graph and published as one multi-node order; without them a job with `goal_node` is refused."""
         self._coordinator = coordinator
         self._publisher = publisher
         self._target = target
@@ -66,6 +70,8 @@ class AmrJobEntry:
         self._machine_state = machine_state
         self._store = idempotency
         self._intake = intake if intake is not None else JobIntake(idempotency)
+        self._graph = graph
+        self._last_node = last_node
         self.enabled = enabled_from_environment() if enabled is None else bool(enabled)
 
     def subscriptions(self) -> list[tuple[str, int]]:
@@ -105,6 +111,8 @@ class AmrJobEntry:
         # fail closed: what the AGV reported, not what the job claims; an unreadable cell is not READY
         observed = self._machine_state()
         cell = self._cell_state()
+        if "goal_node" in job.parameters:
+            return self._route_answer(client, job, cell, observed)
         dispatches = self._coordinator.dispatch_all(job, cell, self._transform, observed)
         results = []
         for dispatch in dispatches:
@@ -126,6 +134,25 @@ class AmrJobEntry:
             "job_id": job.job_id,
             "dispatches": results,
         }
+        if self._store is not None:
+            self._store.remember(job.idempotency_key, json.dumps(answer))
+        return answer
+
+    def _route_answer(self, client: MqttPublisher, job, cell: CellState, observed: MachineState | None) -> dict[str, object]:
+        """A job with `goal_node`: planned on the plant graph from the last node the vehicle reported, published as one order."""
+        if self._graph is None:
+            answer: dict[str, object] = {"allowed": False, "reason": "goal_node needs a plant graph (HYDRA_UMC_AMR_PLANT_GRAPH) and none is loaded", "job_id": job.job_id}
+        else:
+            start = self._last_node() if self._last_node is not None else None
+            route = self._coordinator.dispatch_route(job, cell, self._transform, self._graph, start, observed)
+            published = self._publisher.publish_route(client, self._target, route, order_id=job.job_id)
+            allowed = route.accepted and published.published
+            answer = {
+                "allowed": allowed,
+                "reason": "published" if allowed else (published.reason if route.accepted else route.reason),
+                "job_id": job.job_id,
+                "route": list(route.route),
+            }
         if self._store is not None:
             self._store.remember(job.idempotency_key, json.dumps(answer))
         return answer
