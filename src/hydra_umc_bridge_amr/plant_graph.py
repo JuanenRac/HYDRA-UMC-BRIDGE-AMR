@@ -111,7 +111,8 @@ class PlantGraph:
             edges.append((start, end, length))
             if item.get("bidirectional") is True:
                 edges.append((end, start, length))
-        return cls(data.get("map_id") if isinstance(data.get("map_id"), str) else "", nodes, edges)
+        map_id = data.get("map_id")
+        return cls(map_id if isinstance(map_id, str) else "", nodes, edges)
 
     @classmethod
     def load(cls, path: str | os.PathLike[str]) -> "PlantGraph":
