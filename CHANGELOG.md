@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.8] - The AMR bridge has an optional job entry point on hydra/bridges/amr/cmd/job (off by default) and a bench script that lists every test needing a real vehicle, all marked as not executed
+
 - **A script for the bench:** `docs/BENCH_TESTS.md` lists the steps, the setup and the expected result of the tests that need a real vehicle; every step is marked as not executed.
 
 - **The bridge has an entry point for jobs, off by default:** `AmrJobEntry` (`job_entry.py`) receives a job on `hydra/bridges/amr/cmd/job` through the shared intake of the SDK, like the CNC and laser bridges: a retained replay is ignored, a message that is too large, unreadable, malformed or unsigned (when signed commands are on) is refused, and a repeated idempotency key gets the stored answer instead of a second order. A new job goes to the coordinator with the cell state of this process and the state the AGV itself reported (never the claim in the job), only what the gate accepts is published as a VDA 5050 message, and the answer goes to `hydra/bridges/amr/cmd/job/result`. `HYDRA_UMC_AMR_JOB_ENTRY=1` switches it on and `open_mqtt_client(job_entry=...)` subscribes to it after every reconnect; without the switch nothing is subscribed. `tests/test_job_entry.py` covers the switch, the intake, the repeat and the gate. Not run against a real AGV or fleet manager.
