@@ -10,9 +10,8 @@ import unittest
 
 from hydra_umc_bridge_amr.remote_settings import REMOTE_ENVIRONMENT, SETTINGS_TOPIC, RemoteSettings, parse_remote_settings, remote_settings_allowed
 from hydra_umc_bridge_amr.state_report import StateReporter
-from hydra_umc_bridge_amr.observer import Vda5050Observer
 
-from test_route_telemetry_interlock import TARGET, agv_state, interlock, observer_with
+from test_route_telemetry_interlock import agv_state, interlock, observer_with
 
 
 def message(**settings):
