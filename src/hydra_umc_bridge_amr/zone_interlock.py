@@ -77,6 +77,12 @@ class ZoneInterlock:
         self._observed_ms = 0.0
         self._paused_by_us = False
 
+    def set_unknown_policy(self, policy: str) -> None:
+        """What an occupancy that cannot be read means from now on: `pause` (the conservative one) or `ignore`."""
+        if policy not in ("pause", "ignore"):
+            raise ValueError("the policy for an unknown occupancy must be pause or ignore")
+        self._unknown = policy
+
     def subscriptions(self) -> list[tuple[str, int]]:
         return [(self.topic, 1)] if self.enabled else []
 

@@ -85,6 +85,7 @@ def open_mqtt_client(
     job_entry: "JobEntryLike | None" = None,
     zone_interlock: "ZoneInterlockLike | None" = None,
     state_reporter: "StateReporterLike | None" = None,
+    remote_settings: "RemoteSettingsLike | None" = None,
 ) -> MqttPublisher:
     """Open a real MQTT connection. The only place this module imports paho-mqtt.
 
@@ -109,6 +110,9 @@ def open_mqtt_client(
 
     `zone_interlock` (zone_interlock.py) subscribes to the occupancy of the zones and pauses a vehicle about to enter an occupied one; `state_reporter`
     (state_report.py) publishes the observed state after each state message. Both are off unless their own switch is on.
+
+    `remote_settings` (remote_settings.py) follows the retained switches of Server Admin on `hydra/bridges/amr/settings`; it subscribes and acts only when the host
+    of the bridge allows it (`HYDRA_UMC_AMR_REMOTE_SETTINGS=1`).
     """
 
     if password is not None and username is None:
@@ -145,6 +149,10 @@ def open_mqtt_client(
                 subscriptions = zone_interlock.subscriptions()
                 if subscriptions:
                     client.subscribe(subscriptions)  # type: ignore[attr-defined]
+            if remote_settings is not None:
+                subscriptions = remote_settings.subscriptions()
+                if subscriptions:
+                    client.subscribe(subscriptions)  # type: ignore[attr-defined]
             if follow is not None:
                 follow(client)
         answered.set()
@@ -154,11 +162,13 @@ def open_mqtt_client(
 
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    if observer is not None or follow is not None or job_entry is not None or zone_interlock is not None:
+    if observer is not None or follow is not None or job_entry is not None or zone_interlock is not None or remote_settings is not None:
 
         def on_message(_client: object, _userdata: object, message: object) -> None:
             if follow is not None and message.topic == guard.topic:  # type: ignore[attr-defined]
                 guard.observe(bytes(message.payload))  # type: ignore[attr-defined]  # retained or not: it is the state
+            elif remote_settings is not None and remote_settings.handles(message.topic):  # type: ignore[attr-defined]
+                remote_settings.on_message(client, bytes(message.payload))  # type: ignore[attr-defined]  # retained or not: it is the state of the switches
             elif job_entry is not None and job_entry.handles(message.topic):  # type: ignore[attr-defined]
                 job_entry.on_message(client, message.topic, bytes(message.payload), retained=bool(getattr(message, "retain", False)))  # type: ignore[attr-defined]
             elif zone_interlock is not None and zone_interlock.handles(message.topic):  # type: ignore[attr-defined]
@@ -194,6 +204,14 @@ class JobEntryLike(Protocol):
     def subscriptions(self) -> list[tuple[str, int]]: ...
     def handles(self, topic: str) -> bool: ...
     def on_message(self, client: MqttPublisher, topic: str, payload: bytes, *, retained: bool = False) -> object: ...
+
+
+class RemoteSettingsLike(Protocol):
+    """What `open_mqtt_client` needs of the remote settings (`RemoteSettings`)."""
+
+    def subscriptions(self) -> list[tuple[str, int]]: ...
+    def handles(self, topic: str) -> bool: ...
+    def on_message(self, client: object, payload: bytes) -> object: ...
 
 
 class ZoneInterlockLike(Protocol):
