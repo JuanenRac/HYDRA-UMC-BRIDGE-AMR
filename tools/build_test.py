@@ -18,6 +18,7 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
     from local_build import local_build_refusal  # noqa: E402  (the lock on builds that compile on this PC, kept by tools/sync_repo_tools.py)
 except ImportError:   # a repository that has not taken the helper yet keeps the same rule
-    def local_build_refusal(env: dict[str, str] | None = None) -> str | None:
+    def local_build_refusal(env: Mapping[str, str] | None = None) -> str | None:
         env = os.environ if env is None else env
         if env.get("ALLOW_LOCAL_BUILD", "").strip() == "1" or any(env.get(n, "").strip().lower() not in ("", "0", "false", "no", "off") for n in ("CI", "GITHUB_ACTIONS")):
             return None
