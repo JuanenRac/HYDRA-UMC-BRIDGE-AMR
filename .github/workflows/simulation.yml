@@ -52,6 +52,7 @@ jobs:
           test_vda5050_schemas
           test_simulated_amr
           test_shift_scenarios
+          test_path_planner_graph
           test_coordinator
           test_mqtt_transport
           test_broker_integration

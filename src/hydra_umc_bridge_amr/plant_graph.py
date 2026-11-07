@@ -115,6 +115,31 @@ class PlantGraph:
         return cls(map_id if isinstance(map_id, str) else "", nodes, edges)
 
     @classmethod
+    def from_path_planner(cls, data: object, map_id: str = "", prefix: str = "P", bidirectional: bool = True) -> "PlantGraph":
+        """A graph from the output of the path planner: `{"status": "ok", "path": [{"x":..,"y":..,"z":..}, ...]}` or the bare list of waypoints.
+
+        Every waypoint becomes a node `<prefix>0`, `<prefix>1`... and consecutive waypoints are joined by an edge (both ways unless `bidirectional` is false). The height `z` is
+        ignored (a vehicle drives on a floor). The result goes through the same checks as a graph file, so a planner error object or a malformed waypoint is refused.
+        """
+        if isinstance(data, dict):
+            if data.get("status") not in (None, "ok"):
+                raise PlantGraphError(f"the planner did not produce a path: {data.get('reason', data.get('status'))}")
+            data = data.get("path")
+        if not isinstance(data, list) or len(data) < 2:
+            raise PlantGraphError("the path needs at least two waypoints")
+        if not isinstance(prefix, str) or not _ID.match(prefix + "0"):
+            raise PlantGraphError("the node prefix is not valid")
+        nodes: dict[str, dict[str, object]] = {}
+        edges: list[dict[str, object]] = []
+        for index, point in enumerate(data):
+            if not isinstance(point, dict):
+                raise PlantGraphError(f"waypoint {index} must be an object")
+            nodes[f"{prefix}{index}"] = {"x": point.get("x"), "y": point.get("y")}
+            if index:
+                edges.append({"from": f"{prefix}{index - 1}", "to": f"{prefix}{index}", "bidirectional": bool(bidirectional)})
+        return cls.from_dict({"map_id": map_id, "nodes": nodes, "edges": edges})
+
+    @classmethod
     def load(cls, path: str | os.PathLike[str]) -> "PlantGraph":
         file = Path(path)
         if file.stat().st_size > 8 * 1024 * 1024:

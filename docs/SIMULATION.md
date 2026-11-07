@@ -20,6 +20,7 @@ workflow named "Simulation bench" does exactly this on a clean Linux runner on e
 |------|-------------------|
 | `tests/test_vda5050_emulator.py` | orders and instant actions against the vehicle emulator |
 | `tests/test_shift_scenarios.py` | a shift of orders where the observed state of the emulated vehicle is the gate, with a field violation, an emergency stop, a manual mode, a broken connection and a silent vehicle |
+| `tests/test_path_planner_graph.py` | the plant graph made from the waypoints the path planner documents as its output: the chain of nodes, one-way and two-way edges, the order parts and the refusal of an error object or a bad waypoint |
 | `tests/test_vda5050_schemas.py` | every message the bridge builds, validated against the VDA 5050 schemas |
 | `tests/test_simulated_amr.py` | a simulated AMR with route telemetry and interlocks |
 | `tests/test_coordinator.py` | the coordinator and its gate with simulated evidence |

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A plant graph can be made from the waypoints of the path planner:** `PlantGraph.from_path_planner()` takes the `{"status": "ok", "path": [...]}` output (or the bare list of waypoints) and returns a graph with one node per waypoint and the edges between consecutive ones, two-way or one-way; a planner error, a path of fewer than two waypoints or a bad coordinate is refused. The own JSON of the bridge stays the file format. `tests/test_path_planner_graph.py`, also in the simulation bench. Simulator evidence only; no vehicle has driven such a route.
+
 - **A shift of jobs against the AGV emulator with the vehicle's own state as the gate:** `tests/test_shift_scenarios.py` runs move, load, move and unload orders through the real coordinator, publisher and observer, feeding the emulated vehicle's state and connection messages back to the observer, and injects a field violation in the middle of a drive, an emergency stop with a cancel, a manual mode, a broken connection and a silent vehicle. Simulator evidence only; nothing has run against a real AGV or fleet manager.
 - **A visible simulation bench:** the workflow "Simulation bench" runs the emulators and fakes of the bridge without hardware on every push, by hand and once a week; `docs/SIMULATION.md` says what it exercises and what it cannot show.
 
