@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **README: the platform statement:** a note says that where the README speaks of the CM5 it means the pilot bench that runs today, and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
 - **The tests have a coverage floor of 94 %:** `tools/coverage_floor.json` holds the measured line and branch coverage of the bridge, rounded down (94.5 % measured in the CI environment), and `python tools/hydra_project_tool.py coverage` warns when it falls below it (a warning, not a CI check). Tooling only: no behaviour changes.
 - **How the real MQTT client routes each message is tested without a broker:** `tests/test_open_client_routing.py` (14 tests) replaces paho with a small fake and checks what the job entry, the zone interlock, the remote settings and the observer subscribe after a connect, that each message goes to one part only (the settings before the jobs, the jobs before the zones, the state last), that a state message also steps the interlock and publishes the observed state, that an unowned topic is ignored, and that a refused login, a broker that never answers, a password without a user name and a missing paho are clear errors that stop the client loop. Line coverage of `mqtt_transport.py` goes from 86 % to 97 % and of the bridge from 94 % to 96 %.
 
