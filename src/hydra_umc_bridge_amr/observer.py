@@ -40,6 +40,8 @@ from .mqtt_transport import Vda5050Target
 _DEFAULT_MAX_AGE_SECONDS = 90.0
 # Environment variable that caps the size of one `state` or `connection` message the observer will parse (bytes). Unset: no cap, as before.
 MAX_MESSAGE_BYTES_ENV = "HYDRA_UMC_AMR_MAX_STATE_BYTES"
+# Environment variable that makes the observer also listen to the `factsheet` of the AGV (the answer to a `factsheetRequest`). Unset or anything but 1: off.
+FACTSHEET_ENV = "HYDRA_UMC_AMR_FACTSHEET"
 _ACTIVE_ACTION_STATUSES = {"WAITING", "INITIALIZING", "RUNNING", "PAUSED"}
 
 
@@ -53,9 +55,12 @@ class Vda5050Observer:
         max_age_seconds: float = _DEFAULT_MAX_AGE_SECONDS,
         clock: Callable[[], float] = time.monotonic,
         max_message_bytes: int | None = None,
+        factsheet: bool | None = None,
     ) -> None:
         """`max_message_bytes` caps the size of one message that is parsed; a larger one is ignored like any unreadable message. None reads
-        `HYDRA_UMC_AMR_MAX_STATE_BYTES`, and without it there is no cap (the behaviour before the option existed)."""
+        `HYDRA_UMC_AMR_MAX_STATE_BYTES`, and without it there is no cap (the behaviour before the option existed).
+        `factsheet` (None reads `HYDRA_UMC_AMR_FACTSHEET`, off unless it is `1`) also keeps the last `factsheet` of the vehicle: which action types it
+        supports, so a caller can tell an order the vehicle cannot run before sending it. Off, the subscriptions are exactly what they were."""
         if max_message_bytes is None:
             raw = os.environ.get(MAX_MESSAGE_BYTES_ENV, "").strip()
             if raw:
@@ -78,6 +83,8 @@ class Vda5050Observer:
         self._state_at = 0.0
         self._state_wall_ms = 0
         self._connection: str | None = None
+        self._watch_factsheet = factsheet if factsheet is not None else os.environ.get(FACTSHEET_ENV, "").strip() == "1"
+        self._factsheet: dict | None = None
 
     @property
     def state_topic(self) -> str:
@@ -87,13 +94,20 @@ class Vda5050Observer:
     def connection_topic(self) -> str:
         return self._target.topic("connection")
 
+    @property
+    def factsheet_topic(self) -> str:
+        return self._target.topic("factsheet")
+
     def subscriptions(self) -> list[tuple[str, int]]:
-        """(topic, qos) to subscribe to: the connection with QoS 1 (it is the Last Will), the state with QoS 0."""
-        return [(self.connection_topic, 1), (self.state_topic, 0)]
+        """(topic, qos) to subscribe to: the connection with QoS 1 (it is the Last Will), the state with QoS 0, and with the factsheet switch on the factsheet with QoS 1."""
+        topics = [(self.connection_topic, 1), (self.state_topic, 0)]
+        if self._watch_factsheet:
+            topics.append((self.factsheet_topic, 1))
+        return topics
 
     def on_message(self, topic: str, payload: bytes) -> None:
         """Take one message of the AGV's topics. Anything unreadable is ignored: it can only make the AGV look less known."""
-        if topic not in (self.state_topic, self.connection_topic):
+        if topic not in (self.state_topic, self.connection_topic) and not (self._watch_factsheet and topic == self.factsheet_topic):
             return
         if self._max_message_bytes is not None and len(payload) > self._max_message_bytes:
             return  # larger than the configured cap: never parsed
@@ -106,13 +120,38 @@ class Vda5050Observer:
         if body.get("manufacturer") != self._target.manufacturer or body.get("serialNumber") != self._target.serial_number:
             return  # another vehicle, or a forged header
         with self._lock:
-            if topic == self.connection_topic:
+            if topic == self.factsheet_topic:
+                self._factsheet = body
+            elif topic == self.connection_topic:
                 connection = body.get("connectionState")
                 self._connection = connection if isinstance(connection, str) else None
             else:
                 self._state = body
                 self._state_at = self._clock()
                 self._state_wall_ms = int(time.time() * 1000)
+
+    @property
+    def factsheet(self) -> dict | None:
+        """A copy of the last `factsheet` of this vehicle, or None when none was heard (or the switch is off)."""
+        with self._lock:
+            sheet = self._factsheet
+        return json.loads(json.dumps(sheet)) if sheet is not None else None
+
+    @property
+    def supported_action_types(self) -> frozenset[str] | None:
+        """The action types the vehicle says it supports (`protocolFeatures.agvActions[].actionType`), or None when there is no factsheet or it lists none."""
+        sheet = self.factsheet
+        features = sheet.get("protocolFeatures") if sheet else None
+        actions = features.get("agvActions") if isinstance(features, dict) else None
+        if not isinstance(actions, list):
+            return None
+        types = frozenset(a["actionType"] for a in actions if isinstance(a, dict) and isinstance(a.get("actionType"), str))
+        return types or None
+
+    def supports_action(self, action_type: str) -> bool | None:
+        """True or False when the factsheet settles it, None when it does not (no factsheet heard): the answer "unknown" is never a yes."""
+        types = self.supported_action_types
+        return None if types is None else action_type in types
 
     @property
     def connection_state(self) -> str | None:
