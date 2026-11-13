@@ -130,15 +130,15 @@ class AmrJobEntry:
         dispatches = self._coordinator.dispatch_all(job, cell, self._transform, observed)
         unsupported = self._unsupported_by_vehicle(dispatches)
         if unsupported:
-            answer: dict[str, object] = {
+            refused: dict[str, object] = {
                 "allowed": False,
                 "reason": f"the factsheet of the vehicle does not list the action type {unsupported[0]!r}: nothing was published",
                 "job_id": job.job_id,
                 "unsupported_action_types": unsupported,
             }
             if self._store is not None:
-                self._store.remember(job.idempotency_key, json.dumps(answer))
-            return answer
+                self._store.remember(job.idempotency_key, json.dumps(refused))
+            return refused
         results = []
         for dispatch in dispatches:
             published = self._publisher.publish(client, self._target, None, None, dispatch, order_id=job.job_id)
