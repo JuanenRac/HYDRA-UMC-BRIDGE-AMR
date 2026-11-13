@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Tests of the plant graph:** every refusal of a malformed graph or planner path, the shortest route checked against an independent all-pairs computation on random graphs from a fixed seed, the route length limit and the parts of a VDA 5050 order (`tests/test_plant_graph_properties.py`, part of the simulation bench). CI now measures coverage with a floor.
 - **The observer can keep the factsheet of the vehicle, off by default:** with `HYDRA_UMC_AMR_FACTSHEET=1` (or `factsheet=True`) `Vda5050Observer` also subscribes to the `factsheet` topic and exposes `factsheet`, `supported_action_types` and `supports_action(type)`, so a caller can tell an order the vehicle cannot run before sending it. A vehicle without a factsheet answers "unknown" (None), never a yes; a message of another vehicle, an oversized or an unreadable one is ignored. Off, the subscriptions are unchanged. Tested with the emulator and fake messages; no real vehicle or fleet manager was involved.
 
 ## [0.2.0] - Plant graph from the path planner and a shift scenario

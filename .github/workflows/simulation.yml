@@ -57,3 +57,4 @@ jobs:
           test_mqtt_transport
           test_broker_integration
           test_global_stop_broker
+          test_plant_graph_properties
