@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- **The observer can keep the factsheet of the vehicle, off by default:** with `HYDRA_UMC_AMR_FACTSHEET=1` (or `factsheet=True`) `Vda5050Observer` also subscribes to the `factsheet` topic and exposes `factsheet`, `supported_action_types` and `supports_action(type)`, so a caller can tell an order the vehicle cannot run before sending it. A vehicle without a factsheet answers "unknown" (None), never a yes; a message of another vehicle, an oversized or an unreadable one is ignored. Off, the subscriptions are unchanged. Tested with the emulator and fake messages; no real vehicle or fleet manager was involved.
+
 ## [0.2.0] - Plant graph from the path planner and a shift scenario
 
 - **README: the platform statement:** a note says that where the README speaks of the CM5 it means the pilot bench that runs today, and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
