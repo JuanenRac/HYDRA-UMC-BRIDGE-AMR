@@ -155,6 +155,7 @@ La biblioteca: `AmrCoordinator`, `FrameTransform`, `Vda5050Publisher`, `Vda5050T
 | `HYDRA_MQTT_TLS_CA` | ninguno | El fichero de la CA que firmó el certificado del broker: la conexión es TLS y se verifica el certificado |
 | `HYDRA_MQTT_TLS` | desactivado | `1` activa TLS, verificado con las CA de confianza del sistema |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | ninguno | El certificado de cliente y su clave para un broker que exige TLS mutuo; hacen falta los dos |
+| `HYDRA_UMC_AMR_IN_DOUBT_CONSULT` | desactivado | `1` responde a una clave de trabajo repetida cuyo primer intento no dejó respuesta con el estado y el último nodo que informa el vehículo, en lugar de rechazarla; no se ejecuta nada de nuevo |
 | `HYDRA_UMC_AMR_GLOBAL_STOP` | desactivado | `1` sigue la parada global del servidor: mientras el último anuncio del tema retenido `hydra/swarm/safety/estop` diga `SAFE_STOP` (o no se pueda leer), el bridge rechaza con un motivo: toda orden que mueve el vehículo (cancelar y pausar pasan); solo `READY` lo termina. `HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` cambia el tema y `HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` rechaza también hasta que llegue el primer anuncio |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | ninguno (sin tope) | El mayor mensaje `state` o `connection`, en bytes, que analiza el observador; uno mayor se ignora como cualquier mensaje ilegible |
 

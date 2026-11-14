@@ -155,6 +155,7 @@ VDA 5050 主题为 `{interface_name}/{major_version}/{manufacturer}/{serial_numb
 | `HYDRA_MQTT_TLS_CA` | 无 | 签署代理证书的 CA 文件：连接使用 TLS 并验证证书 |
 | `HYDRA_MQTT_TLS` | 关闭 | `1` 启用 TLS，并用系统信任的 CA 验证 |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | 无 | 用于要求双向 TLS 的代理的客户端证书及其密钥；两者都需要 |
+| `HYDRA_UMC_AMR_IN_DOUBT_CONSULT` | 关闭 | `1` 时，对首次尝试未留下应答的重复任务键，不再直接拒绝，而是用车辆上报的状态和最后一个节点作答；不会再次执行任何操作 |
 | `HYDRA_UMC_AMR_GLOBAL_STOP` | 关闭 | `1` 跟随服务器的全局停止：只要保留主题 `hydra/swarm/safety/estop` 上最新的通知是 `SAFE_STOP`（或无法读取），桥接就会带原因拒绝：所有使车辆移动的订单（取消和暂停放行）；只有 `READY` 才能解除。`HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` 可更改主题，`HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` 会在收到第一条通知之前也拒绝 |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | 无（不设上限） | 观察者解析的 `state` 或 `connection` 消息的最大字节数；更大的消息像任何无法读取的消息一样被忽略 |
 

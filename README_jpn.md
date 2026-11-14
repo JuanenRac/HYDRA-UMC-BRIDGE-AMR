@@ -155,6 +155,7 @@ VDA 5050 のトピックは `{interface_name}/{major_version}/{manufacturer}/{se
 | `HYDRA_MQTT_TLS_CA` | なし | ブローカーの証明書に署名した CA のファイル。接続は TLS になり、証明書が検証されます |
 | `HYDRA_MQTT_TLS` | オフ | `1` で TLS を有効にし、システムの信頼する CA で検証します |
 | `HYDRA_MQTT_TLS_CERT` / `HYDRA_MQTT_TLS_KEY` | なし | 相互 TLS を求めるブローカー用のクライアント証明書とその鍵。両方が必要です |
+| `HYDRA_UMC_AMR_IN_DOUBT_CONSULT` | オフ | `1` にすると、最初の試行が応答を残さなかった再送のジョブキーを拒否せず、車両が報告する状態と最後のノードで応答します。何も再実行されません |
 | `HYDRA_UMC_AMR_GLOBAL_STOP` | オフ | `1` でサーバーのグローバル停止に従います。保持トピック `hydra/swarm/safety/estop` の最新の通知が `SAFE_STOP`（または読み取れない）の間、ブリッジは理由を付けて次を拒否します：車両を動かすすべてのオーダー（キャンセルと一時停止は通す）。解除は `READY` のみです。`HYDRA_UMC_AMR_GLOBAL_STOP_TOPIC` でトピックを変更でき、`HYDRA_UMC_AMR_GLOBAL_STOP_STRICT=1` は最初の通知が届くまでも拒否します |
 | `HYDRA_UMC_AMR_MAX_STATE_BYTES` | なし（上限なし） | オブザーバーが解析する `state` または `connection` メッセージの最大サイズ（バイト）。これより大きいものは読めないメッセージと同様に無視されます |
 
