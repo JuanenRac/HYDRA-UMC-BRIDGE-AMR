@@ -21,7 +21,7 @@ import logging
 import os
 from typing import Callable
 
-from hydra_umc_sdk.bridge_contract import CellState, MachineState
+from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, MachineState
 from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake, read_job_message
 
 from .coordinator import AmrCoordinator, FrameTransform
@@ -36,6 +36,8 @@ RESULT_TOPIC = f"{JOB_TOPIC}/result"
 ENABLE_ENVIRONMENT = "HYDRA_UMC_AMR_JOB_ENTRY"
 # The factsheet gate is ON unless this is "0": with a vehicle that has told the bridge which actions it supports, a job that needs another one is refused.
 FACTSHEET_GATE_ENVIRONMENT = "HYDRA_UMC_AMR_FACTSHEET_GATE"
+# Off unless this is "1": a repeated job key whose first attempt left no answer is answered with what the vehicle reports now instead of a plain refusal.
+IN_DOUBT_CONSULT_ENVIRONMENT = "HYDRA_UMC_AMR_IN_DOUBT_CONSULT"
 # Never refused by the gate: what stops the vehicle must always get through, whatever the factsheet says.
 _SAFETY_WIRE_TYPES = frozenset({"cancelOrder", "startPause", "stopPause"})
 RESULT_QOS = 1
@@ -43,6 +45,10 @@ RESULT_QOS = 1
 
 def enabled_from_environment() -> bool:
     return os.environ.get(ENABLE_ENVIRONMENT, "").strip() == "1"
+
+
+def in_doubt_consult_from_environment() -> bool:
+    return os.environ.get(IN_DOUBT_CONSULT_ENVIRONMENT, "").strip() == "1"
 
 
 def factsheet_gate_from_environment() -> bool:
@@ -68,12 +74,16 @@ class AmrJobEntry:
         last_node: Callable[[], str | None] | None = None,
         supports_action: Callable[[str], bool | None] | None = None,
         factsheet_gate: bool | None = None,
+        in_doubt_consult: bool | None = None,
     ) -> None:
         """`cell_state` and `machine_state` are read for every job (the state of this cell, and the state the AGV reported: `Vda5050Observer.machine_state`).
         `enabled` None follows `HYDRA_UMC_AMR_JOB_ENTRY=1` (default off).
         With a `graph` (see plant_graph.py) and `last_node` (`lambda: observer.last_node_id`), a movement job that names `goal_node` is planned on the graph and published as one multi-node order; without them a job with `goal_node` is refused.
         With `supports_action` (`observer.supports_action`) a job whose actions the factsheet of the vehicle says it does not support (`False`) is refused before anything is published;
-        "unknown" (no factsheet heard) never refuses, and the actions that stop the vehicle are never refused. `factsheet_gate` None follows `HYDRA_UMC_AMR_FACTSHEET_GATE` (on unless it is `0`)."""
+        "unknown" (no factsheet heard) never refuses, and the actions that stop the vehicle are never refused. `factsheet_gate` None follows `HYDRA_UMC_AMR_FACTSHEET_GATE` (on unless it is `0`).
+        `in_doubt_consult` None follows `HYDRA_UMC_AMR_IN_DOUBT_CONSULT=1` (default off): a repeated job key that was claimed but never got an answer is then answered with the state the AGV
+        reports now (and its last node) instead of a plain refusal; the job is never published again, and a vehicle that reports nothing keeps the repeat refused. It applies to the intake this class
+        builds; an `intake` passed in keeps its own policy."""
         self._coordinator = coordinator
         self._publisher = publisher
         self._target = target
@@ -81,7 +91,8 @@ class AmrJobEntry:
         self._cell_state = cell_state
         self._machine_state = machine_state
         self._store = idempotency
-        self._intake = intake if intake is not None else JobIntake(idempotency)
+        consult = in_doubt_consult_from_environment() if in_doubt_consult is None else bool(in_doubt_consult)
+        self._intake = intake if intake is not None else JobIntake(idempotency, in_doubt_policy="consult" if consult else "refuse", status_query=self._report_for_job_in_doubt)
         self._graph = graph
         self._last_node = last_node
         self._supports_action = supports_action
@@ -162,6 +173,28 @@ class AmrJobEntry:
         if self._store is not None:
             self._store.remember(job.idempotency_key, json.dumps(answer))
         return answer
+
+    def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
+        """What the vehicle says now about a job whose first attempt left no answer (the `status_query` of the shared intake).
+
+        It is a reading, not a decision: nothing is evaluated and nothing is published. A vehicle that reports no state gives no answer and the repeat is refused.
+        """
+
+        state = self._machine_state()
+        if state is None:
+            return None
+        report: dict[str, object] = {
+            "allowed": False,
+            "in_doubt": True,
+            "published": False,
+            "job_id": job.job_id,
+            "reason": f"the first attempt of this job left no answer; the vehicle now reports {state.value} and the job is not published again",
+            "machine_state": state.value,
+        }
+        last_node = self._last_node() if self._last_node is not None else None
+        if last_node:
+            report["last_node"] = last_node
+        return json.dumps(report)
 
     def _unsupported_by_vehicle(self, dispatches) -> list[str]:
         """The VDA 5050 action types of the accepted dispatches that the factsheet of the vehicle says it cannot do (empty when the gate is off, nothing is known or all are listed)."""
