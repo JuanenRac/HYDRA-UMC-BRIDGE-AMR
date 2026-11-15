@@ -183,8 +183,11 @@ def open_mqtt_client(
 
         client.on_message = on_message
 
+    def connect() -> None:
+        client.connect(host, port, keepalive=keepalive_seconds)
+
     connect_with_retry(
-        lambda: client.connect(host, port, keepalive=keepalive_seconds),
+        connect,
         max_attempts=max_connect_attempts,
         retry_delay_seconds=connect_retry_delay_seconds,
     )
