@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+
+## [0.2.1]
+
 - **The MQTT connection helper passes a plain callable to the SDK retry:** `open_mqtt_client` wrapped `client.connect(...)` in a lambda that returns the paho result code, which the type check of the SDK helper (`Callable[[], None]`) refused; a small function that ignores the result now does the connect. No behaviour change.
 
 - **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
@@ -14,6 +17,8 @@ All notable changes to this project are documented here.
 - **A job that needs an action the vehicle says it cannot do is refused before anything is published:** the job entry takes the `supports_action` of the observer (the factsheet is still opt-in with `HYDRA_UMC_AMR_FACTSHEET=1`) and, when the factsheet is known and does not list the action type a dispatch would send (`pick`, `drop`), answers `allowed: false` with the type named and publishes nothing. An unknown factsheet never refuses, a movement carries no action type, and `cancelOrder`, `startPause` and `stopPause` are never refused. `HYDRA_UMC_AMR_FACTSHEET_GATE=0` (or `factsheet_gate=False`) turns the gate off. `tests/test_factsheet_gate.py` (9 tests, simulator evidence only; no vehicle has answered a factsheet request).
 - **Tests of the plant graph:** every refusal of a malformed graph or planner path, the shortest route checked against an independent all-pairs computation on random graphs from a fixed seed, the route length limit and the parts of a VDA 5050 order (`tests/test_plant_graph_properties.py`, part of the simulation bench). CI now measures coverage with a floor.
 - **The observer can keep the factsheet of the vehicle, off by default:** with `HYDRA_UMC_AMR_FACTSHEET=1` (or `factsheet=True`) `Vda5050Observer` also subscribes to the `factsheet` topic and exposes `factsheet`, `supported_action_types` and `supports_action(type)`, so a caller can tell an order the vehicle cannot run before sending it. A vehicle without a factsheet answers "unknown" (None), never a yes; a message of another vehicle, an oversized or an unreadable one is ignored. Off, the subscriptions are unchanged. Tested with the emulator and fake messages; no real vehicle or fleet manager was involved.
+
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.2.0] - Plant graph from the path planner and a shift scenario
 
