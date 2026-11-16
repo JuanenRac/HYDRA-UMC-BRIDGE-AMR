@@ -12,6 +12,10 @@ The zone of a node comes from the plant graph (`zone` of the node, see plant_gra
 * a vehicle that is already inside the zone of its next node is not paused (it would stop in the doorway);
 * VDA 5050 `startPause` is a safety action and is always forwarded; the way back, `stopPause`, goes through the coordinator's gate (cell READY and the vehicle read as
   HOLDING) and is sent only to a vehicle THIS interlock paused: one paused by anybody else stays paused;
+* a `startPause` that the vehicle has not confirmed (its `state` does not say `paused`) is sent again every `HYDRA_UMC_AMR_ZONE_PAUSE_RETRY_S` seconds (default 2)
+  for as long as the zone stays blocked, because a publish is only queued, never confirmed;
+* a message stamped more than `HYDRA_UMC_AMR_ZONE_MAX_FUTURE_S` seconds (default 2) ahead of this clock is not believed (a clock that runs ahead, or a forged stamp, would
+  otherwise freeze the reading as "fresh" and make every later real message look like a replay);
 * an occupancy message that was never heard, is unreadable or is older than the maximum age counts as UNKNOWN. `HYDRA_UMC_AMR_ZONE_UNKNOWN` says what that means:
   `pause` (default, the conservative one: a zone that cannot be read is treated as occupied) or `ignore`.
 
@@ -37,9 +41,22 @@ ENABLE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_INTERLOCK"
 TOPIC_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_TOPIC"
 MAX_AGE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_MAX_AGE_S"
 UNKNOWN_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_UNKNOWN"
+RETRY_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_PAUSE_RETRY_S"
+FUTURE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_MAX_FUTURE_S"
 DEFAULT_TOPIC = "hydra/safety/zones/occupied"
 DEFAULT_MAX_AGE_SECONDS = 5.0
+DEFAULT_PAUSE_RETRY_SECONDS = 2.0
+DEFAULT_MAX_FUTURE_SECONDS = 2.0
 MAX_MESSAGE_BYTES = 64 * 1024
+
+
+def _positive_seconds(value: float | None, environment: str, default: float, what: str) -> float:
+    if value is None:
+        raw = os.environ.get(environment, "").strip()
+        value = float(raw) if raw else default
+    if not value > 0:
+        raise ValueError(f"{what} must be positive")
+    return float(value)
 
 
 class ZoneInterlock:
@@ -56,6 +73,8 @@ class ZoneInterlock:
         topic: str | None = None,
         max_age_seconds: float | None = None,
         unknown: str | None = None,
+        pause_retry_seconds: float | None = None,
+        max_future_seconds: float | None = None,
         wall_clock_ms: Callable[[], float] = lambda: time.time() * 1000.0,
     ) -> None:
         self._graph, self._observer, self._coordinator = graph, observer, coordinator
@@ -68,6 +87,8 @@ class ZoneInterlock:
         if not max_age_seconds > 0:
             raise ValueError("the maximum age of the occupancy must be positive")
         self._max_age_ms = float(max_age_seconds) * 1000.0
+        self._retry_ms = _positive_seconds(pause_retry_seconds, RETRY_ENVIRONMENT, DEFAULT_PAUSE_RETRY_SECONDS, "the pause retry interval") * 1000.0
+        self._max_future_ms = _positive_seconds(max_future_seconds, FUTURE_ENVIRONMENT, DEFAULT_MAX_FUTURE_SECONDS, "the tolerated lead of a stamp") * 1000.0
         policy = (unknown or os.environ.get(UNKNOWN_ENVIRONMENT, "").strip() or "pause").lower()
         if policy not in ("pause", "ignore"):
             raise ValueError("the policy for an unknown occupancy must be pause or ignore")
@@ -76,6 +97,7 @@ class ZoneInterlock:
         self._occupied: frozenset[str] | None = None
         self._observed_ms = 0.0
         self._paused_by_us = False
+        self._pause_sent_ms = 0.0
 
     def set_unknown_policy(self, policy: str) -> None:
         """What an occupancy that cannot be read means from now on: `pause` (the conservative one) or `ignore`."""
@@ -103,12 +125,15 @@ class ZoneInterlock:
             return
         if isinstance(stamp, bool) or not isinstance(stamp, (int, float)) or stamp < self._observed_ms:
             return  # no stamp, or a replay of an older message
+        if stamp > self._wall() + self._max_future_ms:
+            return  # stamped in the future: not believed, and it must not become the newest stamp
         self._occupied = frozenset(zones)
         self._observed_ms = float(stamp)
 
     def occupied(self) -> frozenset[str] | None:
         """The occupied zones, or None (UNKNOWN) when nothing current has been heard."""
-        if self._occupied is None or self._wall() - self._observed_ms > self._max_age_ms:
+        now = self._wall()
+        if self._occupied is None or now - self._observed_ms > self._max_age_ms or self._observed_ms - now > self._max_future_ms:
             return None
         return self._occupied
 
@@ -132,10 +157,14 @@ class ZoneInterlock:
         inside = self._graph.zone_of(self._observer.last_node_id)
         blocked = self._blocked(next_zone) and next_zone != inside
         paused = state.get("paused") is True
-        if blocked and not self._paused_by_us and not paused:
+        if blocked and not paused:
+            now = self._wall()
+            if self._paused_by_us and now - self._pause_sent_ms < self._retry_ms:
+                return None  # asked a moment ago; the vehicle has not said yet
             dispatch = AmrDispatch(True, AmrCoordinator.START_PAUSE, f"the zone {next_zone} ahead is occupied or unreadable", channel="instantActions")
             if self._publisher.publish(client, self._target, None, None, dispatch).published:
                 self._paused_by_us = True
+                self._pause_sent_ms = now
                 return "pause"
             return None
         if not blocked and self._paused_by_us:

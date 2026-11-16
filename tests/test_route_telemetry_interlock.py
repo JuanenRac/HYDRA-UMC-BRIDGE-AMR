@@ -301,6 +301,44 @@ class InterlockTests(unittest.TestCase):
         self.assertEqual(zones.occupied(), frozenset({"press-1"}))
         self.assertIsNone(zones.step(Client()))  # the next node C has no zone
 
+    def test_a_pause_the_vehicle_does_not_confirm_is_sent_again_after_the_retry_interval(self) -> None:
+        now = [1000.0]
+        observer = observer_with(agv_state(last="A", next_nodes=("B",)))
+        zones = interlock(observer, wall=lambda: now[0])
+        client = Client()
+        zones.on_message(ZONE_TOPIC, occupied(["press-1"]))
+        self.assertEqual(zones.step(client), "pause")
+        self.assertIsNone(zones.step(client))  # too soon
+        now[0] = 3500.0
+        zones.on_message(ZONE_TOPIC, occupied(["press-1"], 3500))
+        self.assertEqual(zones.step(client), "pause")  # the vehicle still does not say it is paused
+        self.assertEqual(len(client.on("/instantActions")), 2)
+        # once it reports itself paused nothing more is sent while the zone stays occupied
+        observer.on_message(observer.state_topic, agv_state(last="A", next_nodes=("B",), paused=True, driving=False))
+        now[0] = 9000.0
+        zones.on_message(ZONE_TOPIC, occupied(["press-1"], 9000))
+        self.assertIsNone(zones.step(client))
+        self.assertEqual(len(client.on("/instantActions")), 2)
+
+    def test_a_stamp_in_the_future_is_not_believed_and_does_not_blind_the_interlock(self) -> None:
+        zones = interlock(observer_with(agv_state(last="A", next_nodes=("B",))))
+        zones.on_message(ZONE_TOPIC, occupied([], 10_000_000))  # hours ahead of the clock
+        self.assertIsNone(zones.occupied())
+        client = Client()
+        self.assertEqual(zones.step(client), "pause")  # nothing believed: unknown, so the conservative policy pauses
+        zones.on_message(ZONE_TOPIC, occupied(["press-1"], 1000))  # a real message is still taken
+        self.assertEqual(zones.occupied(), frozenset({"press-1"}))
+        # a reading whose stamp ends up far ahead of the clock (the clock went back) is unknown again
+        later = interlock(observer_with(agv_state()), wall=lambda: 1000.0)
+        later.on_message(ZONE_TOPIC, occupied([], 1002))
+        later._wall = lambda: -10_000.0
+        self.assertIsNone(later.occupied())
+
+    def test_the_retry_and_future_settings_must_be_positive(self) -> None:
+        for name in ("pause_retry_seconds", "max_future_seconds"):
+            with self.assertRaises(ValueError):
+                ZoneInterlock(PlantGraph.from_dict(GRAPH), observer_with(agv_state()), AmrCoordinator(), publisher(), TARGET, lambda: CellState.READY, enabled=True, **{name: 0})
+
     def test_a_bad_policy_is_refused(self) -> None:
         with self.assertRaises(ValueError):
             interlock(observer_with(agv_state()), unknown="shrug")
