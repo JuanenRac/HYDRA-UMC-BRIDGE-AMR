@@ -45,6 +45,20 @@ FACTSHEET_ENV = "HYDRA_UMC_AMR_FACTSHEET"
 _ACTIVE_ACTION_STATUSES = {"WAITING", "INITIALIZING", "RUNNING", "PAUSED"}
 
 
+def _has_required_fields(state: dict) -> bool:
+    """The fields of a VDA 5050 `state` that decide the machine state: operating mode, the emergency stop and the field violation, the driving flag, the node and action lists."""
+    safety = state.get("safetyState")
+    return (
+        isinstance(state.get("operatingMode"), str)
+        and isinstance(safety, dict)
+        and isinstance(safety.get("eStop"), str)
+        and isinstance(safety.get("fieldViolation"), bool)
+        and isinstance(state.get("driving"), bool)
+        and isinstance(state.get("nodeStates"), list)
+        and isinstance(state.get("actionStates"), list)
+    )
+
+
 class Vda5050Observer:
     """The last state and connection of one AGV. Safe to feed from the MQTT thread and read from another."""
 
@@ -198,11 +212,13 @@ class Vda5050Observer:
             return MachineState.OFFLINE
         if self._clock() - state_at > self._max_age:
             return MachineState.OFFLINE
-        if state.get("operatingMode", "AUTOMATIC") != "AUTOMATIC":
+        # a state without the fields the schema requires is not read as a quiet vehicle: what is absent is not "safe"
+        if not _has_required_fields(state):
             return MachineState.OFFLINE
-        safety = state.get("safetyState")
-        safety = safety if isinstance(safety, dict) else {}
-        if safety.get("eStop", "NONE") != "NONE":
+        if state.get("operatingMode") != "AUTOMATIC":
+            return MachineState.OFFLINE
+        safety = state["safetyState"]
+        if safety.get("eStop") != "NONE":
             return MachineState.SAFE_STOP
         errors = state.get("errors")
         fatal = isinstance(errors, list) and any(isinstance(e, dict) and e.get("errorLevel") == "FATAL" for e in errors)

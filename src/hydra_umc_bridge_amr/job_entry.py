@@ -21,7 +21,7 @@ import logging
 import os
 from typing import Callable
 
-from hydra_umc_sdk.bridge_contract import BridgeJob, CellState, MachineState
+from hydra_umc_sdk.bridge_contract import BridgeError, BridgeJob, CellState, JobPhase, MachineState, job_from_dict
 from hydra_umc_sdk.job_intake import IdempotencyStore, JobIntake, read_job_message
 
 from .coordinator import AmrCoordinator, FrameTransform
@@ -124,14 +124,17 @@ class AmrJobEntry:
         message = read_job_message(self._intake, topic, payload, retained=retained)
         if message.ignore:
             return None
-        if message.refusal is not None:
-            return message.refusal
-        if message.repeat_answer is not None:
-            try:
-                return json.loads(message.repeat_answer)
-            except ValueError:
-                return {"allowed": False, "reason": "this idempotency key was already handled"}
-        job = message.job
+        # an abort only ever stops things: one whose key was already seen (its first attempt failed to publish, or died half way) is sent again, never answered from the store
+        repeated_abort = self._repeated_abort(message, payload)
+        if repeated_abort is None:
+            if message.refusal is not None:
+                return message.refusal
+            if message.repeat_answer is not None:
+                try:
+                    return json.loads(message.repeat_answer)
+                except ValueError:
+                    return {"allowed": False, "reason": "this idempotency key was already handled"}
+        job = repeated_abort if repeated_abort is not None else message.job
         assert job is not None
         # fail closed: what the AGV reported, not what the job claims; an unreadable cell is not READY
         observed = self._machine_state()
@@ -173,6 +176,19 @@ class AmrJobEntry:
         if self._store is not None:
             self._store.remember(job.idempotency_key, json.dumps(answer))
         return answer
+
+    @staticmethod
+    def _repeated_abort(message, payload: bytes) -> BridgeJob | None:
+        """The job of a message that was refused or answered only because its idempotency key had been handled before, when that job is an ABORT. The message has passed
+        the signature check by then (a repeat is recognised after it), so only the repeat itself is let through."""
+        if message.repeat_answer is None and not (message.refusal is not None and "idempotency key was already handled" in str(message.refusal.get("reason", ""))):
+            return None
+        try:
+            raw = json.loads(payload)
+            job = job_from_dict(raw)
+        except (ValueError, BridgeError, AttributeError, TypeError):
+            return None
+        return job if job.phase is JobPhase.ABORT else None
 
     def _report_for_job_in_doubt(self, job: BridgeJob) -> str | None:
         """What the vehicle says now about a job whose first attempt left no answer (the `status_query` of the shared intake).

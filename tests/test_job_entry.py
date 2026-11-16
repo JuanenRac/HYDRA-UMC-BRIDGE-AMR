@@ -119,6 +119,28 @@ class GateTests(unittest.TestCase):
         self.assertTrue(answer["allowed"])
         self.assertTrue(client.vda()[0].endswith("/instantActions"))
 
+    def test_an_abort_whose_key_was_already_seen_is_sent_again(self) -> None:
+        store = IdempotencyStore()
+        e = entry(store=store, cell=CellState.SAFE_STOP, machine=MachineState.FAULT)
+        client = Client()
+        first = e.on_message(client, JOB_TOPIC, job(key="k9", phase="ABORT", params={}))
+        self.assertTrue(first["allowed"])
+        again = e.on_message(client, JOB_TOPIC, job(key="k9", phase="ABORT", params={}))
+        self.assertTrue(again["allowed"])
+        self.assertEqual(len(client.vda()), 2)  # published both times
+        # a key claimed whose first attempt left no answer (died half way): the repeat of an abort is still sent
+        e2 = entry(store=store, cell=CellState.SAFE_STOP, machine=MachineState.FAULT)
+        e2._intake.accept({"job_id": "job-1", "idempotency_key": "k11", "source": "orchestrator", "phase": "ABORT", "machine_state": "IDLE", "parameters": {}}, topic=JOB_TOPIC)
+        stuck = e2.on_message(Client(), JOB_TOPIC, job(key="k11", phase="ABORT", params={}))
+        self.assertTrue(stuck["allowed"])
+
+    def test_a_movement_repeated_with_the_same_key_is_still_not_sent_again(self) -> None:
+        e = entry(store=IdempotencyStore())
+        client = Client()
+        e.on_message(client, JOB_TOPIC, job(key="k12"))
+        e.on_message(client, JOB_TOPIC, job(key="k12"))
+        self.assertEqual(len(client.vda()), 1)
+
     def test_a_movement_without_coordinates_is_refused(self) -> None:
         client = Client()
         answer = entry().on_message(client, JOB_TOPIC, job(params={}))

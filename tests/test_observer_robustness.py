@@ -19,7 +19,7 @@ TARGET = Vda5050Target("vda5050", "v2", "hydra-umc", "amr-1")
 
 
 def good_state(**extra: object) -> dict:
-    body = {"manufacturer": "hydra-umc", "serialNumber": "amr-1", "operatingMode": "AUTOMATIC", "driving": False}
+    body = {"manufacturer": "hydra-umc", "serialNumber": "amr-1", "operatingMode": "AUTOMATIC", "driving": False, "nodeStates": [], "actionStates": [], "safetyState": {"eStop": "NONE", "fieldViolation": False}}
     body.update(extra)
     return body
 
@@ -44,6 +44,21 @@ class ObserverRobustnessTests(unittest.TestCase):
         observer = self.make()
         self.feed(observer, b"[" * 200000 + b"]" * 200000)
         self.assertEqual(observer.machine_state(), MachineState.OFFLINE)
+
+    def test_a_state_without_the_required_fields_is_not_a_quiet_vehicle(self):
+        observer = self.make()
+        self.feed(observer, json.dumps({"manufacturer": "hydra-umc", "serialNumber": "amr-1"}).encode())
+        self.assertEqual(observer.machine_state(), MachineState.OFFLINE)
+        for missing in ("operatingMode", "driving", "nodeStates", "actionStates", "safetyState"):
+            body = good_state()
+            del body[missing]
+            self.feed(observer, json.dumps(body).encode())
+            self.assertEqual(observer.machine_state(), MachineState.OFFLINE, missing)
+        body = good_state(safetyState={"eStop": "NONE"})  # no fieldViolation
+        self.feed(observer, json.dumps(body).encode())
+        self.assertEqual(observer.machine_state(), MachineState.OFFLINE)
+        self.feed(observer, json.dumps(good_state()).encode())
+        self.assertEqual(observer.machine_state(), MachineState.IDLE)
 
     def test_a_good_message_after_garbage_is_still_taken(self):
         observer = self.make()
