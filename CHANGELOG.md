@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The status table of the README shows the exact test count as confirmed:** the table is regenerated from the recorded data, so the Tests line is green for a count that was collected and that a workflow runs. The README and its seven translations are regenerated.
+
 - **The test counts of the README and the file tree are current.** The README and its seven translations are regenerated.
 
 - **The zone interlock reads an optional `known: false` in the occupancy message as UNKNOWN:** an emitter that cannot see the zones can now say so, and an empty list is no longer taken as "free" in that case (the `pause` or `ignore` policy for an unknown reading applies). A message without the field reads as before, and a `known` that is not true or false makes the message unreadable.
