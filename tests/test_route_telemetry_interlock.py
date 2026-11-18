@@ -334,6 +334,32 @@ class InterlockTests(unittest.TestCase):
         later._wall = lambda: -10_000.0
         self.assertIsNone(later.occupied())
 
+    def test_a_message_that_says_it_could_not_see_is_unknown_and_not_free(self) -> None:
+        zones = interlock(observer_with(agv_state(last="A", next_nodes=("B",))))
+        zones.on_message(ZONE_TOPIC, json.dumps({"occupied": [], "observed_at": 1000, "known": False}).encode())
+        self.assertIsNone(zones.occupied())
+        client = Client()
+        self.assertEqual(zones.step(client), "pause")  # the conservative policy for an unknown reading
+        ignoring = interlock(observer_with(agv_state(last="A", next_nodes=("B",))), unknown="ignore")
+        ignoring.on_message(ZONE_TOPIC, json.dumps({"occupied": ["press-1"], "observed_at": 1000, "known": False}).encode())
+        self.assertIsNone(ignoring.occupied(), "the zones of a message that could not see are not believed either")
+        self.assertIsNone(ignoring.step(Client()))
+
+    def test_a_later_message_that_sees_again_ends_the_unknown_reading(self) -> None:
+        zones = interlock(observer_with(agv_state(last="A", next_nodes=("B",))))
+        zones.on_message(ZONE_TOPIC, json.dumps({"occupied": [], "observed_at": 1000, "known": False}).encode())
+        zones.on_message(ZONE_TOPIC, json.dumps({"occupied": [], "observed_at": 1001, "known": True}).encode())
+        self.assertEqual(zones.occupied(), frozenset())
+        zones.on_message(ZONE_TOPIC, occupied([], 1002))  # without the field it reads as before
+        self.assertEqual(zones.occupied(), frozenset())
+
+    def test_a_known_that_is_not_true_or_false_makes_the_message_unreadable(self) -> None:
+        zones = interlock(observer_with(agv_state()))
+        zones.on_message(ZONE_TOPIC, occupied(["press-1"], 1000))
+        for bad in ("no", 0, None, []):
+            zones.on_message(ZONE_TOPIC, json.dumps({"occupied": [], "observed_at": 1001, "known": bad}).encode())
+            self.assertEqual(zones.occupied(), frozenset({"press-1"}), bad)
+
     def test_the_retry_and_future_settings_must_be_positive(self) -> None:
         for name in ("pause_retry_seconds", "max_future_seconds"):
             with self.assertRaises(ValueError):

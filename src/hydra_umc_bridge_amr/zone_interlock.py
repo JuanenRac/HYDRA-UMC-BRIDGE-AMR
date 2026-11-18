@@ -6,7 +6,8 @@
 """Pause an AGV whose next node lies in a zone that is occupied, and let it go on when the zone is free.
 
 The zone of a node comes from the plant graph (`zone` of the node, see plant_graph.py). What is occupied comes from a message on `HYDRA_UMC_AMR_ZONE_TOPIC`
-(default `hydra/safety/zones/occupied`): `{"occupied": ["press-1"], "observed_at": <milliseconds>}`. The next node is the lowest `sequenceId` of the vehicle's own
+(default `hydra/safety/zones/occupied`): `{"occupied": ["press-1"], "observed_at": <milliseconds>}`, with an optional `"known": false` that says the emitter could not see
+the zones (then the empty list is not "free" and the reading is UNKNOWN, whatever `occupied` holds; without the field it reads as before). The next node is the lowest `sequenceId` of the vehicle's own
 `nodeStates`. The rules:
 
 * a vehicle that is already inside the zone of its next node is not paused (it would stop in the doorway);
@@ -96,6 +97,7 @@ class ZoneInterlock:
         self._wall = wall_clock_ms
         self._occupied: frozenset[str] | None = None
         self._observed_ms = 0.0
+        self._seen = True  # False when the last message said `known: false`
         self._paused_by_us = False
         self._pause_sent_ms = 0.0
 
@@ -123,17 +125,21 @@ class ZoneInterlock:
         stamp = body.get("observed_at") if isinstance(body, dict) else None
         if not isinstance(zones, list) or not all(isinstance(z, str) for z in zones):
             return
+        known = body.get("known", True)
+        if not isinstance(known, bool):
+            return  # a field of the contract with the wrong type: the message is not believed
         if isinstance(stamp, bool) or not isinstance(stamp, (int, float)) or stamp < self._observed_ms:
             return  # no stamp, or a replay of an older message
         if stamp > self._wall() + self._max_future_ms:
             return  # stamped in the future: not believed, and it must not become the newest stamp
         self._occupied = frozenset(zones)
+        self._seen = known
         self._observed_ms = float(stamp)
 
     def occupied(self) -> frozenset[str] | None:
         """The occupied zones, or None (UNKNOWN) when nothing current has been heard."""
         now = self._wall()
-        if self._occupied is None or now - self._observed_ms > self._max_age_ms or self._observed_ms - now > self._max_future_ms:
+        if self._occupied is None or not self._seen or now - self._observed_ms > self._max_age_ms or self._observed_ms - now > self._max_future_ms:
             return None
         return self._occupied
 
