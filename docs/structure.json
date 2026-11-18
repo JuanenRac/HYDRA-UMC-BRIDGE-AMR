@@ -143,14 +143,14 @@
         {
           "name": "tests/",
           "desc": {
-            "en": "110 tests, with a VDA 5050 emulator and the official schemas",
-            "es": "110 pruebas, con un emulador VDA 5050 y los esquemas oficiales",
-            "de": "110 Tests, mit einem VDA-5050-Emulator und den offiziellen Schemas",
-            "fr": "110 tests, avec un émulateur VDA 5050 et les schémas officiels",
-            "it": "110 test, con un emulatore VDA 5050 e gli schemi ufficiali",
-            "ja": "110 件（VDA 5050 エミュレーターと公式スキーマ付き）",
-            "zh": "110 项测试（含 VDA 5050 模拟器与官方模式）",
-            "pt": "110 testes, com um emulador VDA 5050 e os esquemas oficiais"
+            "en": "280 tests, with a VDA 5050 emulator and the official schemas",
+            "es": "280 pruebas, con un emulador VDA 5050 y los esquemas oficiales",
+            "de": "280 Tests, mit einem VDA-5050-Emulator und den offiziellen Schemas",
+            "fr": "280 tests, avec un émulateur VDA 5050 et les schémas officiels",
+            "it": "280 test, con un emulatore VDA 5050 e gli schemi ufficiali",
+            "ja": "280 件（VDA 5050 エミュレーターと公式スキーマ付き）",
+            "zh": "280 项测试（含 VDA 5050 模拟器与官方模式）",
+            "pt": "280 testes, com um emulador VDA 5050 e os esquemas oficiais"
           }
         },
         {

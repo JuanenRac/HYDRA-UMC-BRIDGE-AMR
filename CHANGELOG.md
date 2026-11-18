@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The test counts of the README and the file tree are current.** The README and its seven translations are regenerated.
+
 - **The zone interlock reads an optional `known: false` in the occupancy message as UNKNOWN:** an emitter that cannot see the zones can now say so, and an empty list is no longer taken as "free" in that case (the `pause` or `ignore` policy for an unknown reading applies). A message without the field reads as before, and a `known` that is not true or false makes the message unreadable.
 
 - **A vehicle state that lacks the required fields reads as OFFLINE, and an abort is sent again when its key was already seen:** a `state` with only the manufacturer and the serial number used to read as IDLE because every missing field took the permissive value (automatic mode, no emergency stop, not driving); it now needs the operating mode, the emergency stop, the field violation, the driving flag and the node and action lists. An ABORT job whose idempotency key had been handled before (its first attempt failed to publish or died half way) used to get the stored answer or a refusal and no `cancelOrder`; it is now published again, while every other job keeps its once-only handling. 3 new tests.
