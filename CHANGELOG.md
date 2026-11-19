@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.2]
+
 - **The status table of the README shows the exact test count as confirmed:** the table is regenerated from the recorded data, so the Tests line is green for a count that was collected and that a workflow runs. The README and its seven translations are regenerated.
 
 - **The test counts of the README and the file tree are current.** The README and its seven translations are regenerated.
@@ -14,6 +16,7 @@ All notable changes to this project are documented here.
 
 - **The zone interlock sends a pause again while the vehicle does not confirm it, and does not believe a stamp from the future:** a `startPause` was marked as done as soon as it was queued, so a lost message or a refusal left the vehicle driving into an occupied zone with nothing more sent. It is now sent again every `HYDRA_UMC_AMR_ZONE_PAUSE_RETRY_S` seconds (default 2) while the zone stays blocked and the state does not say `paused`. A message stamped more than `HYDRA_UMC_AMR_ZONE_MAX_FUTURE_S` seconds (default 2) ahead of the local clock is ignored, so one such message can no longer pin an old reading as fresh and make every later message look like a replay. 3 new tests.
 
+- Successful incremental build: synchronized package metadata and `hydra-umc.project.json`.
 
 ## [0.2.1]
 
