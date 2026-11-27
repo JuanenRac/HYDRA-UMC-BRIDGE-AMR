@@ -27,6 +27,8 @@ from typing import Callable, Mapping, Protocol
 
 from hydra_umc_sdk.signed_commands import CommandSigningError, load_key, verify_command
 
+from .settings_state import SettingsState
+
 REMOTE_ENVIRONMENT = "HYDRA_UMC_AMR_REMOTE_SETTINGS"
 SETTINGS_TOPIC = "hydra/bridges/amr/settings"
 KEY_ENVIRONMENT = "HYDRA_UMC_AMR_SETTINGS_KEY_FILE"
@@ -49,11 +51,23 @@ def remote_settings_allowed(environ: Mapping[str, str] | None = None) -> bool:
 class SettingsVerifier:
     """Judges the signed settings message: signature, expiry and counter. Without a key it refuses everything (`usable` is False)."""
 
-    def __init__(self, key: bytes | None, *, clock: Callable[[], float] = time.time) -> None:
+    def __init__(self, key: bytes | None, *, clock: Callable[[], float] = time.time, state: SettingsState | None = None) -> None:
         self._key = key
         self._clock = clock
-        self._last_seq = -1
+        self._state = state if key is not None else None
+        # the counter and the values of the last message applied before a restart (settings_state.py)
+        self._last_seq, self.remembered = self._state.load() if self._state is not None else (-1, {})
         self.last_reason = ""
+
+    def remember(self, found: Mapping[str, object]) -> None:
+        """Keep what was just applied next to its counter."""
+        values = {key: value for key, value in found.items() if isinstance(value, (bool, str))}
+        if not values:
+            return
+        merged = {**self.remembered, **values}
+        self.remembered = merged
+        if self._state is not None:
+            self._state.save(self._last_seq, merged)
 
     @classmethod
     def from_environment(cls, environ: Mapping[str, str] | None = None, *, clock: Callable[[], float] = time.time) -> "SettingsVerifier":
@@ -63,7 +77,7 @@ class SettingsVerifier:
         if not path:
             return cls(None, clock=clock)
         try:
-            return cls(load_key(path), clock=clock)
+            return cls(load_key(path), clock=clock, state=SettingsState.from_environment(path, source))
         except CommandSigningError as error:
             _LOG.warning("the key of the signed settings cannot be used, remote settings stay off: %s", error)
             return cls(None, clock=clock)
@@ -80,6 +94,8 @@ class SettingsVerifier:
         verdict = verify_command(SETTINGS_TOPIC, body, self._key, now_ms=int(self._clock() * 1000), max_clock_skew_ms=MAX_SKEW_MS, max_expires_in_ms=MAX_EXPIRES_MS)
         if not verdict.ok:
             self.last_reason = verdict.reason
+            if "expired" in verdict.reason:
+                _LOG.warning("a remote setting arrived expired and is not applied; what was applied before stays: %s", ", ".join(sorted(self.remembered)) or "nothing")
             return False
         seq = body.get("seq")
         if type(seq) is not int or seq < 0:
@@ -140,6 +156,17 @@ class RemoteSettings:
         self.enabled = bool(wanted and self._verifier is not None and self._verifier.usable)
         if wanted and not self.enabled:
             _LOG.warning("remote settings are allowed but there is no usable key for them: they stay off")
+        if self.enabled:
+            self._restore()
+
+    def _restore(self) -> None:
+        """After a restart, apply again what the server had set that makes this bridge stricter; the rest waits for a current message."""
+        assert self._verifier is not None
+        stricter: dict[str, bool | str] = {"zoneInterlock": True, "zoneUnknown": "pause"}
+        kept = {key: value for key, value in self._verifier.remembered.items() if stricter.get(key) == value and type(stricter.get(key)) is type(value)}
+        if kept:
+            self._apply(None, kept)
+            _LOG.info("remote settings of before the restart applied again: %s", ", ".join(f"{key}={value}" for key, value in sorted(kept.items())))
 
     def subscriptions(self) -> list[tuple[str, int]]:
         return [(SETTINGS_TOPIC, 1)] if self.enabled else []
@@ -154,6 +181,13 @@ class RemoteSettings:
         found = parse_remote_settings(payload, self._verifier)
         if not found:
             return {}
+        self._apply(client, found)
+        if self._verifier is not None:
+            self._verifier.remember(found)
+        _LOG.info("remote settings applied: %s", ", ".join(f"{key}={value}" for key, value in sorted(found.items())))
+        return found
+
+    def _apply(self, client: _Subscriber | None, found: Mapping[str, bool | str]) -> None:
         reporter, zone = self._reporter, self._zone
         if reporter is not None:
             if "publishState" in found:
@@ -168,5 +202,3 @@ class RemoteSettings:
                 zone.enabled = bool(found["zoneInterlock"])  # type: ignore[attr-defined]
                 if zone.enabled and not was_on and client is not None:  # type: ignore[attr-defined]
                     client.subscribe(zone.subscriptions())  # type: ignore[attr-defined]
-        _LOG.info("remote settings applied: %s", ", ".join(f"{key}={value}" for key, value in sorted(found.items())))
-        return found
