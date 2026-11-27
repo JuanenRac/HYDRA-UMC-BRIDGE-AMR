@@ -109,7 +109,7 @@ def open_mqtt_client(
     guard, which the publisher asks before it sends anything that moves the vehicle.
 
     `zone_interlock` (zone_interlock.py) subscribes to the occupancy of the zones and pauses a vehicle about to enter an occupied one; `state_reporter`
-    (state_report.py) publishes the observed state after each state message. Both are off unless their own switch is on.
+    (state_report.py) publishes the observed state after each state message. The interlock also gets its timer started (`ZoneInterlock.start`), so that silence is acted on. Both are off unless their own switch is on.
 
     `remote_settings` (remote_settings.py) follows the retained switches of Server Admin on `hydra/bridges/amr/settings`; it subscribes and acts only when the host
     of the bridge allows it (`HYDRA_UMC_AMR_REMOTE_SETTINGS=1`).
@@ -198,6 +198,9 @@ def open_mqtt_client(
     if refusal:
         client.loop_stop()
         raise RuntimeError(f"the MQTT broker refused the connection: {refusal[0]}")
+    start_timer = getattr(zone_interlock, "start", None)
+    if start_timer is not None:
+        start_timer(client)  # silence is acted on as well as messages
     return client
 
 

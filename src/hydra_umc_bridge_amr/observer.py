@@ -59,6 +59,23 @@ def _has_required_fields(state: dict) -> bool:
     )
 
 
+def next_node_of(state: dict) -> str | None:
+    """The node of `nodeStates` with the lowest sequenceId, None when there is none."""
+    nodes = state.get("nodeStates")
+    if not isinstance(nodes, list):
+        return None
+    best: tuple[int, str] | None = None
+    for node in nodes:
+        if not isinstance(node, dict) or not isinstance(node.get("nodeId"), str):
+            continue
+        sequence = node.get("sequenceId")
+        if not isinstance(sequence, int) or isinstance(sequence, bool):
+            continue
+        if best is None or sequence < best[0]:
+            best = (sequence, node["nodeId"])
+    return best[1] if best else None
+
+
 class Vda5050Observer:
     """The last state and connection of one AGV. Safe to feed from the MQTT thread and read from another."""
 
@@ -191,19 +208,13 @@ class Vda5050Observer:
     def next_node_id(self) -> str | None:
         """The node the vehicle is going to reach next (the lowest sequenceId of its `nodeStates`), None when it has none or the state is not current."""
         seen = self.snapshot()
-        nodes = seen[0].get("nodeStates") if seen else None
-        if not isinstance(nodes, list):
-            return None
-        best: tuple[int, str] | None = None
-        for node in nodes:
-            if not isinstance(node, dict) or not isinstance(node.get("nodeId"), str):
-                continue
-            sequence = node.get("sequenceId")
-            if not isinstance(sequence, int) or isinstance(sequence, bool):
-                continue
-            if best is None or sequence < best[0]:
-                best = (sequence, node["nodeId"])
-        return best[1] if best else None
+        return next_node_of(seen[0]) if seen else None
+
+    def last_known_state(self) -> dict | None:
+        """A copy of the last `state` message however old it is and whatever the connection says. It is not current: use it only to stop, never to move."""
+        with self._lock:
+            state = self._state
+        return json.loads(json.dumps(state)) if state is not None else None
 
     def machine_state(self) -> MachineState:
         with self._lock:
