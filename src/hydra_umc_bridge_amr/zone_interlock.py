@@ -17,6 +17,10 @@ the zones (then the empty list is not "free" and the reading is UNKNOWN, whateve
   for as long as the zone stays blocked, because a publish is only queued, never confirmed;
 * a message stamped more than `HYDRA_UMC_AMR_ZONE_MAX_FUTURE_S` seconds (default 2) ahead of this clock is not believed (a clock that runs ahead, or a forged stamp, would
   otherwise freeze the reading as "fresh" and make every later real message look like a replay);
+* the vehicle is looked at again every `HYDRA_UMC_AMR_ZONE_TICK_S` seconds (default 1, `0` switches the timer off), not only when a message arrives: an occupancy that ages out
+  while nobody speaks becomes UNKNOWN and is acted on;
+* a vehicle that falls silent (its last `state` is too old, or its connection is not ONLINE) keeps its last known next node: if that zone is blocked it is sent `startPause`,
+  and nothing is ever resumed from a state that is not current. `HYDRA_UMC_AMR_ZONE_SILENCE_PAUSE=0` restores the old behaviour (nothing is sent to a silent vehicle);
 * an occupancy message that was never heard, is unreadable or is older than the maximum age counts as UNKNOWN. `HYDRA_UMC_AMR_ZONE_UNKNOWN` says what that means:
   `pause` (default, the conservative one: a zone that cannot be read is treated as occupied) or `ignore`.
 
@@ -27,7 +31,9 @@ or a real occupancy source.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import threading
 import time
 from typing import Callable
 
@@ -35,7 +41,7 @@ from hydra_umc_sdk.bridge_contract import CellState
 
 from .coordinator import AmrCoordinator, AmrDispatch
 from .mqtt_transport import MqttPublisher, Vda5050Publisher, Vda5050Target
-from .observer import Vda5050Observer
+from .observer import Vda5050Observer, next_node_of
 from .plant_graph import PlantGraph
 
 ENABLE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_INTERLOCK"
@@ -44,11 +50,15 @@ MAX_AGE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_MAX_AGE_S"
 UNKNOWN_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_UNKNOWN"
 RETRY_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_PAUSE_RETRY_S"
 FUTURE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_MAX_FUTURE_S"
+TICK_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_TICK_S"
+SILENCE_ENVIRONMENT = "HYDRA_UMC_AMR_ZONE_SILENCE_PAUSE"
+DEFAULT_TICK_SECONDS = 1.0
 DEFAULT_TOPIC = "hydra/safety/zones/occupied"
 DEFAULT_MAX_AGE_SECONDS = 5.0
 DEFAULT_PAUSE_RETRY_SECONDS = 2.0
 DEFAULT_MAX_FUTURE_SECONDS = 2.0
 MAX_MESSAGE_BYTES = 64 * 1024
+_LOG = logging.getLogger(__name__)
 
 
 def _positive_seconds(value: float | None, environment: str, default: float, what: str) -> float:
@@ -76,6 +86,8 @@ class ZoneInterlock:
         unknown: str | None = None,
         pause_retry_seconds: float | None = None,
         max_future_seconds: float | None = None,
+        tick_seconds: float | None = None,
+        silence_pause: bool | None = None,
         wall_clock_ms: Callable[[], float] = lambda: time.time() * 1000.0,
     ) -> None:
         self._graph, self._observer, self._coordinator = graph, observer, coordinator
@@ -100,6 +112,16 @@ class ZoneInterlock:
         self._seen = True  # False when the last message said `known: false`
         self._paused_by_us = False
         self._pause_sent_ms = 0.0
+        if tick_seconds is None:
+            raw = os.environ.get(TICK_ENVIRONMENT, "").strip()
+            tick_seconds = float(raw) if raw else DEFAULT_TICK_SECONDS
+        if not 0 <= tick_seconds <= 3600:
+            raise ValueError("the tick of the interlock must be 0 (off) or a number of seconds up to 3600")
+        self.tick_seconds = float(tick_seconds)
+        self._silence_pause = os.environ.get(SILENCE_ENVIRONMENT, "").strip() != "0" if silence_pause is None else bool(silence_pause)
+        self._step_lock = threading.Lock()  # the MQTT thread and the timer both call step()
+        self._stop_ticking = threading.Event()
+        self._ticker: threading.Thread | None = None
 
     def set_unknown_policy(self, policy: str) -> None:
         """What an occupancy that cannot be read means from now on: `pause` (the conservative one) or `ignore`."""
@@ -151,28 +173,58 @@ class ZoneInterlock:
             return self._unknown == "pause"
         return zone in occupied
 
+    def start(self, client: MqttPublisher) -> None:
+        """Look at the vehicle on a timer too, so that silence is acted on. Does nothing with a tick of 0 or when the timer already runs."""
+        if not self.tick_seconds or (self._ticker is not None and self._ticker.is_alive()):
+            return
+        self._stop_ticking = stop = threading.Event()
+
+        def run() -> None:
+            while not stop.wait(self.tick_seconds):
+                try:
+                    self.step(client)
+                except Exception:  # noqa: BLE001 - the timer must outlive one bad step
+                    _LOG.exception("the zone interlock could not look at the vehicle")
+
+        self._ticker = threading.Thread(target=run, name="hydra-amr-zone-interlock", daemon=True)
+        self._ticker.start()
+
+    def stop(self) -> None:
+        """End the timer of start()."""
+        self._stop_ticking.set()
+        if self._ticker is not None:
+            self._ticker.join(timeout=5.0)
+            self._ticker = None
+
     def step(self, client: MqttPublisher) -> str | None:
         """Look at the vehicle once; return "pause", "resume" or None for what was sent. Never raises on a publish failure."""
         if not self.enabled:
             return None
+        with self._step_lock:
+            return self._step(client)
+
+    def _pause(self, client: MqttPublisher, reason: str) -> str | None:
+        now = self._wall()
+        if self._paused_by_us and now - self._pause_sent_ms < self._retry_ms:
+            return None  # asked a moment ago; the vehicle has not said yet
+        dispatch = AmrDispatch(True, AmrCoordinator.START_PAUSE, reason, channel="instantActions")
+        if self._publisher.publish(client, self._target, None, None, dispatch).published:
+            self._paused_by_us = True
+            self._pause_sent_ms = now
+            return "pause"
+        return None
+
+    def _step(self, client: MqttPublisher) -> str | None:
         seen = self._observer.snapshot()
         if seen is None:
-            return None
+            return self._step_silent(client)
         state = seen[0]
         next_zone = self._graph.zone_of(self._observer.next_node_id)
         inside = self._graph.zone_of(self._observer.last_node_id)
         blocked = self._blocked(next_zone) and next_zone != inside
         paused = state.get("paused") is True
         if blocked and not paused:
-            now = self._wall()
-            if self._paused_by_us and now - self._pause_sent_ms < self._retry_ms:
-                return None  # asked a moment ago; the vehicle has not said yet
-            dispatch = AmrDispatch(True, AmrCoordinator.START_PAUSE, f"the zone {next_zone} ahead is occupied or unreadable", channel="instantActions")
-            if self._publisher.publish(client, self._target, None, None, dispatch).published:
-                self._paused_by_us = True
-                self._pause_sent_ms = now
-                return "pause"
-            return None
+            return self._pause(client, f"the zone {next_zone} ahead is occupied or unreadable")
         if not blocked and self._paused_by_us:
             if not paused and state.get("driving") is True:
                 self._paused_by_us = False  # somebody else already let it go
@@ -182,3 +234,16 @@ class ZoneInterlock:
                 self._paused_by_us = False
                 return "resume"
         return None
+
+    def _step_silent(self, client: MqttPublisher) -> str | None:
+        """The vehicle is silent: only a pause may be sent, from what it said last. Nothing is resumed, and a vehicle never heard is not addressed."""
+        if not self._silence_pause:
+            return None
+        last = self._observer.last_known_state()
+        if last is None or last.get("paused") is True:
+            return None
+        next_zone = self._graph.zone_of(next_node_of(last))
+        inside = self._graph.zone_of(self._observer.last_node_id)
+        if next_zone == inside or not self._blocked(next_zone):
+            return None
+        return self._pause(client, f"the vehicle is silent and the zone {next_zone} ahead is occupied or unreadable")
