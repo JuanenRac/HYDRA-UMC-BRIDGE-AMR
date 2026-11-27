@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.2.3] - A silent vehicle leads to a pause and a signed release of the global stop
 
 - **The silence of a vehicle or of the zone source now leads to a pause:** the zone interlock looked at the vehicle only when a message arrived. It is now also run on a timer (`HYDRA_UMC_AMR_ZONE_TICK_S`, default 1 second, `0` switches the timer off), so an occupancy that ages out is acted on, and a vehicle that falls silent with a blocked zone ahead is sent `startPause` from its last known next node (`HYDRA_UMC_AMR_ZONE_SILENCE_PAUSE=0` turns that off). Nothing is resumed from a state that is not current. The interlock itself stays off by default; not run against a real AGV.
 - **The switches announced by the server survive a restart:** the counter of the last signed settings message and the values it carried are kept in a state file (`HYDRA_UMC_AMR_SETTINGS_STATE_FILE`, or the settings key file with `.state.json` after its name), so a restart neither forgets the replay counter nor comes back less strict: the zone interlock switched on and the `pause` answer to an unknown occupancy are applied again at the start; anything that relaxes the bridge needs a current signed message. A message that arrives expired is now said in the log.
